@@ -1,0 +1,12 @@
+<resources>
+    <!-- App Name -->
+    <string name="app_name">Graph</string>
+    <!-- Firebase Configuration -->
+    <string name="firebase_database_url" translatable="false">https://newprototype-571c5.firebaseio.com</string>
+    <string name="gcm_defaultSenderId" translatable="false">442704456177</string>
+    <string name="google_api_key" translatable="false">AIzaSyBGQB_4U9TVJHaDsfNRA9VsK6EpNG8vanQ</string>
+    <string name="google_app_id" translatable="false">1:442704456177:android:919b44754877330e633c50</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyBGQB_4U9TVJHaDsfNRA9VsK6EpNG8vanQ</string>
+    <string name="google_storage_bucket" translatable="false">newprototype-571c5.appspot.com</string>
+    <string name="project_id" translatable="false">newprototype-571c5</string>
+</resources>

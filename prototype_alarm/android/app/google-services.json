@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "357566491932",
+    "project_id": "graphtest-9fe38",
+    "storage_bucket": "graphtest-9fe38.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:357566491932:android:53a3500d9ada5ef9f7ded9",
+        "android_client_info": {
+          "package_name": "graph.test"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBX2fnVVNdmR7t22rt7pRc_SfYexSLiFcg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

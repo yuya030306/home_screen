@@ -6,6 +6,10 @@ import 'time_setting_screen.dart';
 import 'calendar_screen.dart';
 import 'chart_screen.dart';
 import 'settings_screen.dart';
+import 'add_data.dart';
+import 'ranking.dart';
+
+
 
 class HomeScreen extends StatefulWidget {
   @override

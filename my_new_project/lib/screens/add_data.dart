@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'ranking_screen.dart';
 
 class AddDataScreen extends StatefulWidget {
+  const AddDataScreen({Key? key}) : super(key: key);
+
   @override
   _AddDataScreenState createState() => _AddDataScreenState();
 }
@@ -32,11 +35,11 @@ class _AddDataScreenState extends State<AddDataScreen> {
       _categoryController.clear();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Record added successfully')),
+        const SnackBar(content: Text('Record added successfully')),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please fill out all fields')),
+        const SnackBar(content: Text('Please fill out all fields')),
       );
     }
   }
@@ -54,7 +57,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Record'),
+        title: const Text('Add Record'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -62,24 +65,24 @@ class _AddDataScreenState extends State<AddDataScreen> {
           children: [
             TextField(
               controller: _categoryController,
-              decoration: InputDecoration(labelText: 'Category'),
+              decoration: const InputDecoration(labelText: 'Category'),
             ),
             TextField(
               controller: _userController,
-              decoration: InputDecoration(labelText: 'User'),
+              decoration: const InputDecoration(labelText: 'User'),
             ),
             TextField(
               controller: _recordController,
-              decoration: InputDecoration(labelText: 'Record'),
+              decoration: const InputDecoration(labelText: 'Record'),
             ),
             TextField(
               controller: _dateController,
-              decoration: InputDecoration(labelText: 'Date'),
+              decoration: const InputDecoration(labelText: 'Date'),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _addData,
-              child: Text('Add Record'),
+              child: const Text('Add Record'),
             ),
           ],
         ),

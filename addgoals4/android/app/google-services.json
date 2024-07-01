@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "369244664548",
+    "project_id": "addgoals4",
+    "storage_bucket": "addgoals4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:369244664548:android:1b4cdd51ad6ad986d832f1",
+        "android_client_info": {
+          "package_name": "com.example.addgoals4.addgoals4"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzXh0kqvQl4u78QlXyXKG7durRg1bT4es"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

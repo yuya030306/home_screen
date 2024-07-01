@@ -6,7 +6,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'dart:io';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
-import 'package:carousel_slider/carousel_slider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -224,6 +223,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   List<String> _imageUrls = [];
   final Map<DateTime, List<String>> _events = {};
   CalendarFormat _calendarFormat = CalendarFormat.month;
+  int _currentImageIndex = 0;
 
   @override
   void initState() {
@@ -250,9 +250,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   List<String> _getImagesForDay(DateTime day) {
     //指定した日付に対応する画像のURLをリストで返す
     final String formattedDay = DateFormat('yyyyMMdd').format(day);
-    return _imageUrls
-        .where((url) => url.contains(formattedDay))
-        .toList();
+    return _imageUrls.where((url) => url.contains(formattedDay)).toList();
   }
 
   @override
@@ -275,6 +273,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             onDaySelected: (selectedDay, focusedDay) {
               setState(() {
                 _selectedDay = selectedDay;
+                _currentImageIndex = 0;
                 // 日付が選択されたときに選択日付を更新
               });
             },
@@ -314,22 +313,54 @@ class _CalendarScreenState extends State<CalendarScreen> {
               defaultTextStyle: TextStyle(color: Colors.black), // カレンダーの日付の文字色を黒に設定
             ),
           ),
-          Expanded(
-            // 選択された日付に対応する画像がない場合はメッセージを表示し、ある場合はカルーセルスライダーで画像を表示する
-            child: imagesForSelectedDay.isEmpty
-                ? Center(child: Text('No images for selected day'))
-                : CarouselSlider(
-                    options: CarouselOptions(height: 400.0),
-                    items: imagesForSelectedDay.map((url) {
-                      return Builder(
-                        builder: (BuildContext context) {
-                          return Image.network(url);
-                          //選択された画像のURLを返す
-                        },
-                      );
-                    }).toList(),
+          if (imagesForSelectedDay.isEmpty)
+            Center(child: Text('No images for selected day'))
+          else
+            Column(
+              children: [
+                Container(
+                  width: 300,
+                  height: 300,
+                  child: Image.network(
+                    imagesForSelectedDay[_currentImageIndex],
+                    fit: BoxFit.cover,
                   ),
-          ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: _currentImageIndex > 0 ? (){
+                        setState(() {
+                          _currentImageIndex = (_currentImageIndex - 1 + imagesForSelectedDay.length) % imagesForSelectedDay.length;
+                        });
+                      }:null,
+                      child: Icon(Icons.arrow_back),
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                        textStyle: TextStyle(fontSize: 18),
+                      ),
+                    ),
+
+                    SizedBox(width: 30),
+
+                    ElevatedButton(
+                      onPressed: _currentImageIndex < imagesForSelectedDay.length - 1 ? (){
+                        setState(() {
+                          _currentImageIndex = (_currentImageIndex + 1) % imagesForSelectedDay.length;
+                        });
+                      }:null,
+                      child: Icon(Icons.arrow_forward),
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                        textStyle: TextStyle(fontSize: 18),
+                      ),
+                    ),
+
+                  ],
+                ),
+              ],
+            ),
         ],
       ),
     );

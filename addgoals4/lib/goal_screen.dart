@@ -10,28 +10,104 @@ class GoalScreen extends StatefulWidget {
 class _GoalScreenState extends State<GoalScreen> {
   final _formKey = GlobalKey<FormState>();
   String _goalText = '';
+  String _goalUnit = '';
   DateTime? _selectedDate;
-  List<String> _presets = ['Exercise', 'Read a book', 'Learn a new skill'];
+  List<Map<String, String>> _presets = [];
+  String? _selectedPreset;
+  String? _selectedUnit;
+  final TextEditingController _goalController = TextEditingController();
+  final TextEditingController _unitController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPresets();
+  }
+
+  Future<void> _loadPresets() async {
+    QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('presetGoals').get();
+    setState(() {
+      _presets = snapshot.docs
+          .where((doc) => doc.data() != null && (doc.data() as Map<String, dynamic>).containsKey('goal'))
+          .map((doc) => {
+        'goal': (doc.data() as Map<String, dynamic>)['goal'].toString(),
+        'unit': (doc.data() as Map<String, dynamic>).containsKey('unit')
+            ? (doc.data() as Map<String, dynamic>)['unit'].toString()
+            : ''
+      })
+          .toList();
+    });
+  }
+
+  void _selectPresetDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Select a Preset'),
+          content: Container(
+            width: double.maxFinite,
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('presetGoals').snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return Center(child: CircularProgressIndicator());
+                }
+                var presets = snapshot.data!.docs
+                    .where((doc) => doc.data() != null && (doc.data() as Map<String, dynamic>).containsKey('goal'))
+                    .map((doc) => {
+                  'goal': (doc.data() as Map<String, dynamic>)['goal'].toString(),
+                  'unit': (doc.data() as Map<String, dynamic>).containsKey('unit')
+                      ? (doc.data() as Map<String, dynamic>)['unit'].toString()
+                      : ''
+                })
+                    .toList();
+                return ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: presets.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return ListTile(
+                      title: Text(presets[index]['goal']!),
+                      subtitle: Text(presets[index]['unit']!),
+                      onTap: () {
+                        setState(() {
+                          _selectedPreset = presets[index]['goal'];
+                          _selectedUnit = presets[index]['unit'];
+                          _goalText = presets[index]['goal']!;
+                          _goalUnit = presets[index]['unit']!;
+                          _goalController.text = presets[index]['goal']!; // Update the text field
+                          _unitController.text = presets[index]['unit']!; // Update the text field
+                        });
+                        Navigator.of(context).pop();
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _navigateToEditPresets() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => EditPresetsScreen(onPresetsChanged: _loadPresets)),
+    ).then((_) => _loadPresets());
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Goal          edit preset'),
+        title: Text('Add Goal'),
         actions: [
           IconButton(
             icon: Icon(Icons.edit),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => EditPresetsScreen(presets: _presets, onPresetsChanged: (newPresets) {
-                  setState(() {
-                    _presets = newPresets;
-                  });
-                })),
-              );
-            },
-          )
+            onPressed: _navigateToEditPresets,
+          ),
         ],
       ),
       body: Padding(
@@ -41,25 +117,12 @@ class _GoalScreenState extends State<GoalScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(labelText: 'Select a preset'),
-                items: _presets.map((preset) {
-                  return DropdownMenuItem(
-                    value: preset,
-                    child: Text(preset),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _goalText = value ?? '';
-                  });
-                },
-                onSaved: (value) {
-                  _goalText = value ?? '';
-                },
+              ElevatedButton(
+                onPressed: _selectPresetDialog,
+                child: Text('Select Preset'),
               ),
               TextFormField(
-                initialValue: _goalText,
+                controller: _goalController,
                 decoration: InputDecoration(labelText: 'Goal'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -69,6 +132,19 @@ class _GoalScreenState extends State<GoalScreen> {
                 },
                 onSaved: (value) {
                   _goalText = value!;
+                },
+              ),
+              TextFormField(
+                controller: _unitController,
+                decoration: InputDecoration(labelText: 'Unit'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a unit';
+                  }
+                  return null;
+                },
+                onSaved: (value) {
+                  _goalUnit = value!;
                 },
               ),
               ListTile(
@@ -105,6 +181,7 @@ class _GoalScreenState extends State<GoalScreen> {
                     if (_selectedDate != null) {
                       FirebaseFirestore.instance.collection('goals').add({
                         'goal': _goalText,
+                        'unit': _goalUnit,
                         'deadline': _selectedDate,
                       }).then((_) {
                         Navigator.of(context).pop();
@@ -114,13 +191,14 @@ class _GoalScreenState extends State<GoalScreen> {
                 },
                 child: Text('Add Goal'),
               ),
+              SizedBox(height: 20),
               Expanded(
-                child: StreamBuilder(
+                child: StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
                       .collection('goals')
                       .orderBy('deadline')
                       .snapshots(),
-                  builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                  builder: (context, snapshot) {
                     if (!snapshot.hasData) {
                       return Center(child: CircularProgressIndicator());
                     }
@@ -128,10 +206,11 @@ class _GoalScreenState extends State<GoalScreen> {
                       itemCount: snapshot.data!.docs.length,
                       itemBuilder: (context, index) {
                         var goal = snapshot.data!.docs[index];
+                        var data = goal.data() as Map<String, dynamic>?; // Null safety
                         return ListTile(
                           title: Text(goal['goal']),
-                          subtitle: Text(DateFormat('yyyy-MM-dd – kk:mm')
-                              .format((goal['deadline'] as Timestamp).toDate())),
+                          subtitle: Text(
+                              '${data != null && data.containsKey('unit') ? goal['unit'] : ''} - ${DateFormat('yyyy-MM-dd – kk:mm').format((goal['deadline'] as Timestamp).toDate())}'),
                         );
                       },
                     );
@@ -147,33 +226,87 @@ class _GoalScreenState extends State<GoalScreen> {
 }
 
 class EditPresetsScreen extends StatefulWidget {
-  final List<String> presets;
-  final Function(List<String>) onPresetsChanged;
+  final Function onPresetsChanged;
 
-  EditPresetsScreen({required this.presets, required this.onPresetsChanged});
+  EditPresetsScreen({required this.onPresetsChanged});
 
   @override
   _EditPresetsScreenState createState() => _EditPresetsScreenState();
 }
 
 class _EditPresetsScreenState extends State<EditPresetsScreen> {
-  late List<String> _presets;
+  List<Map<String, String>> _presets = [];
+  final List<TextEditingController> _goalControllers = [];
+  final List<TextEditingController> _unitControllers = [];
 
   @override
   void initState() {
     super.initState();
-    _presets = List.from(widget.presets);
+    _loadPresets();
+  }
+
+  Future<void> _loadPresets() async {
+    QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('presetGoals').get();
+    setState(() {
+      _presets = snapshot.docs
+          .where((doc) => doc.data() != null && (doc.data() as Map<String, dynamic>).containsKey('goal'))
+          .map((doc) => {
+        'id': doc.id,
+        'goal': (doc.data() as Map<String, dynamic>)['goal'].toString(),
+        'unit': (doc.data() as Map<String, dynamic>).containsKey('unit')
+            ? (doc.data() as Map<String, dynamic>)['unit'].toString()
+            : ''
+      })
+          .toList();
+      _goalControllers.clear();
+      _unitControllers.clear();
+      _goalControllers.addAll(_presets.map((preset) => TextEditingController(text: preset['goal'])));
+      _unitControllers.addAll(_presets.map((preset) => TextEditingController(text: preset['unit'])));
+    });
   }
 
   void _addPreset() {
     setState(() {
-      _presets.add('');
+      var goalController = TextEditingController();
+      var unitController = TextEditingController();
+      _goalControllers.add(goalController);
+      _unitControllers.add(unitController);
+      _presets.add({'id': '', 'goal': '', 'unit': ''});
     });
   }
 
   void _savePresets() {
-    widget.onPresetsChanged(_presets.where((preset) => preset.isNotEmpty).toList());
+    for (int i = 0; i < _presets.length; i++) {
+      var preset = _presets[i];
+      var goal = _goalControllers[i].text;
+      var unit = _unitControllers[i].text;
+      if (preset['id'] == '') {
+        FirebaseFirestore.instance.collection('presetGoals').add({'goal': goal, 'unit': unit});
+      } else {
+        FirebaseFirestore.instance.collection('presetGoals').doc(preset['id']!).set({'goal': goal, 'unit': unit});
+      }
+    }
+    widget.onPresetsChanged();
     Navigator.of(context).pop();
+  }
+
+  void _deletePreset(int index) {
+    var preset = _presets[index];
+    if (preset['id'] != '') {
+      FirebaseFirestore.instance.collection('presetGoals').doc(preset['id']).delete().then((_) {
+        setState(() {
+          _presets.removeAt(index);
+          _goalControllers.removeAt(index);
+          _unitControllers.removeAt(index);
+        });
+      });
+    } else {
+      setState(() {
+        _presets.removeAt(index);
+        _goalControllers.removeAt(index);
+        _unitControllers.removeAt(index);
+      });
+    }
   }
 
   @override
@@ -192,21 +325,31 @@ class _EditPresetsScreenState extends State<EditPresetsScreen> {
         itemCount: _presets.length,
         itemBuilder: (context, index) {
           return ListTile(
-            title: TextFormField(
-              initialValue: _presets[index],
-              onChanged: (value) {
-                setState(() {
-                  _presets[index] = value;
-                });
-              },
+            title: Column(
+              children: [
+                TextFormField(
+                  controller: _goalControllers[index],
+                  decoration: InputDecoration(labelText: 'Goal'),
+                  onChanged: (value) {
+                    setState(() {
+                      _presets[index]['goal'] = value;
+                    });
+                  },
+                ),
+                TextFormField(
+                  controller: _unitControllers[index],
+                  decoration: InputDecoration(labelText: 'Unit'),
+                  onChanged: (value) {
+                    setState(() {
+                      _presets[index]['unit'] = value;
+                    });
+                  },
+                ),
+              ],
             ),
             trailing: IconButton(
               icon: Icon(Icons.delete),
-              onPressed: () {
-                setState(() {
-                  _presets.removeAt(index);
-                });
-              },
+              onPressed: () => _deletePreset(index),
             ),
           );
         },

@@ -32,7 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => AlarmSettingScreen()),
+                  MaterialPageRoute(builder: (context) => AlarmPage()),
                 );
               },
               icon: Icon(Icons.alarm, size: 40),

@@ -35,7 +35,7 @@ class _AlarmPageState extends State<AlarmPage> {
     );
 
     if (alarmTime.isBefore(now)) {
-      // アラームが現在の時刻よりも前の場合、次の日に設定します。
+      // アラームが現在の時刻よりも前の場合、次の日に設定。
       alarmTime = alarmTime.add(Duration(days: 1));
     }
 

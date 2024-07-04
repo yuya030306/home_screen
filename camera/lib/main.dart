@@ -218,7 +218,7 @@ class FullScreenImageScreen extends StatelessWidget {
 
 class _CalendarScreenState extends State<CalendarScreen> {
   DateTime _selectedDay = DateTime.now();
-  List<String> _imageUrls = [];
+  List<Map<String, String>> _imageUrls = [];
   final Map<DateTime, List<String>> _events = {};
   CalendarFormat _calendarFormat = CalendarFormat.month;
   int _currentImageIndex = 0;
@@ -232,19 +232,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Future<void> _fetchImages() async {
     FirebaseStorage storage = FirebaseStorage.instanceFor(bucket: 'gs://camera-ea94f.appspot.com');
     final ListResult result = await storage.ref('downloads').listAll();
-    final List<String> urls = [];
+    final List<Map<String, String>> urls = [];
     for (var ref in result.items) {
       final String url = await ref.getDownloadURL();
-      urls.add(url);
+      final String name = ref.name;
+      urls.add({'url': url, 'name': name});
     }
     setState(() {
       _imageUrls = urls;
     });
   }
 
-  List<String> _getImagesForDay(DateTime day) {
+  List<Map<String, String>> _getImagesForDay(DateTime day) {
     final String formattedDay = DateFormat('yyyyMMdd').format(day);
-    return _imageUrls.where((url) => url.contains(formattedDay)).toList();
+    return _imageUrls
+        .where((image) => image['name']!.contains(formattedDay))
+        .toList();
   }
 
   @override
@@ -264,8 +267,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
             selectedDayPredicate: (day) => isSameDay(day, _selectedDay),
             onDaySelected: (selectedDay, focusedDay) {
               setState(() {
-                _selectedDay = selectedDay;
-                _currentImageIndex = 0;
+                if (_selectedDay != selectedDay) {
+                  _selectedDay = selectedDay;
+                  _currentImageIndex = 0;
+                }
               });
             },
             headerStyle: HeaderStyle(
@@ -288,18 +293,39 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 }
                 return M;
               },
+              titleTextStyle: TextStyle(
+                color: Colors.black,
+                fontSize: 20.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            daysOfWeekStyle: DaysOfWeekStyle(
+              dowTextFormatter: (date, locale) {
+                switch (date.weekday) {
+                  case DateTime.sunday:
+                    return '日';
+                  case DateTime.monday:
+                    return '月';
+                  case DateTime.tuesday:
+                    return '火';
+                  case DateTime.wednesday:
+                    return '水';
+                  case DateTime.thursday:
+                    return '木';
+                  case DateTime.friday:
+                    return '金';
+                  case DateTime.saturday:
+                    return '土';
+                  default:
+                    return '';
+                }
+              },
+              weekendStyle: TextStyle().copyWith(color: Colors.red),
             ),
             calendarStyle: CalendarStyle(
               todayDecoration: BoxDecoration(
                 color: Color.fromARGB(255, 26, 79, 192),
                 shape: BoxShape.circle,
-              ),
-              selectedDecoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Color.fromARGB(255, 0, 0, 0),
-                  width: 2.0,
-                ),
               ),
               defaultTextStyle: TextStyle(color: Colors.black),
             ),
@@ -310,7 +336,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   return Container(
                     decoration: BoxDecoration(
                       image: DecorationImage(
-                        image: NetworkImage(imagesForDay.first),
+                        image: NetworkImage(imagesForDay.first['url']!),
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -329,19 +355,71 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   return Center(child: Text(day.day.toString()));
                 }
               },
+              selectedBuilder: (context, day, focusedDay) {
+                final imagesForDay = _getImagesForDay(day);
+                if (imagesForDay.isNotEmpty) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: NetworkImage(imagesForDay.first['url']!),
+                        fit: BoxFit.cover,
+                      ),
+                      border: Border.all(
+                        color: Colors.black,
+                        width: 2.0,
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        day.day.toString(),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          backgroundColor: Colors.black54,
+                        ),
+                      ),
+                    ),
+                  );
+                } else {
+                  return Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Colors.black,
+                        width: 2.0,
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        day.day.toString(),
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+              },
             ),
           ),
           if (imagesForSelectedDay.isEmpty)
-            Center(child: Text('No images for selected day'))
+            Center(child: Text('選択されている日付の写真は見つかりませんでした'))
           else
             Column(
               children: [
                 Container(
                   width: 300,
                   height: 300,
-                  child: Image.network(
-                    imagesForSelectedDay[_currentImageIndex],
-                    fit: BoxFit.cover,
+                  child: SingleChildScrollView(
+                    child: Column(children: [
+                      Image.network(
+                        imagesForSelectedDay[_currentImageIndex]['url']!,
+                        fit: BoxFit.cover,
+                      ),
+                    ],)
+                    
                   ),
                 ),
                 Row(
@@ -378,6 +456,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     ),
                   ],
                 ),
+                SizedBox(height: 8),
+                      Text(
+                        '${DateFormat('yyyy年MM月dd日').format(_selectedDay)} - ${_currentImageIndex + 1}枚目',  
+                        style: TextStyle(fontSize: 16, color: Colors.black),
+                      ),
               ],
             ),
         ],

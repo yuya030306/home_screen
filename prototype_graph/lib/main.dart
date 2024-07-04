@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'goals.dart';
+import 'home.dart'; // 新しいホーム画面をインポート
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: '目標トラッカー',
-      home: GoalsScreen(),
+      home: HomeScreen(), // ホーム画面を初期画面に設定
     );
   }
 }

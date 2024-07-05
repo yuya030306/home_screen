@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // インポート追加
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'authentication_error.dart';
 import 'email_check.dart';
 
@@ -17,7 +17,7 @@ class _RegistrationState extends State<Registration> {
 
   String _newEmail = "";
   String _newPassword = "";
-  String _newUsername = ""; // ユーザーネーム用変数追加
+  String _newUsername = "";
   String _infoText = "";
   bool _pswdOK = false;
 
@@ -40,7 +40,7 @@ class _RegistrationState extends State<Registration> {
             Padding(
               padding: EdgeInsets.fromLTRB(25.0, 0, 25.0, 0),
               child: TextFormField(
-                decoration: InputDecoration(labelText: "ユーザーネーム"), // ユーザーネームの入力フィールド追加
+                decoration: InputDecoration(labelText: "ユーザーネーム"),
                 onChanged: (String value) {
                   _newUsername = value;
                 },
@@ -95,6 +95,18 @@ class _RegistrationState extends State<Registration> {
                 onPressed: () async {
                   if (_pswdOK) {
                     try {
+                      // ユーザーネームの重複確認
+                      final querySnapshot = await _firestore
+                          .collection('users')
+                          .where('username', isEqualTo: _newUsername)
+                          .get();
+                      if (querySnapshot.docs.isNotEmpty) {
+                        setState(() {
+                          _infoText = 'このユーザーネームは既に使用されています。';
+                        });
+                        return;
+                      }
+
                       _result = await _auth.createUserWithEmailAndPassword(
                         email: _newEmail,
                         password: _newPassword,
@@ -103,9 +115,14 @@ class _RegistrationState extends State<Registration> {
                       _user = _result?.user;
 
                       if (_user != null) {
-                        await _firestore.collection('users').doc(_user!.uid).set({
+                        await _firestore
+                            .collection('users')
+                            .doc(_user!.uid)
+                            .set({
                           'username': _newUsername,
                           'email': _newEmail,
+                          'friends': [],
+                          'friendRequests': [],
                         });
 
                         await _user?.sendEmailVerification();
@@ -134,6 +151,12 @@ class _RegistrationState extends State<Registration> {
                   }
                 },
               ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('ログイン画面に戻る'),
             ),
           ],
         ),

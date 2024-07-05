@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'screens/friend_request_screen.dart';
+import 'screens/friends_list_screen.dart';
 
 class Home extends StatelessWidget {
   final String userId;
@@ -44,6 +46,16 @@ class Home extends StatelessWidget {
             Text('ようこそ',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             Text(userId),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => FriendsListScreen(userId: userId)),
+                );
+              },
+              child: Text('フレンド一覧'),
+            ),
           ],
         ),
       ),

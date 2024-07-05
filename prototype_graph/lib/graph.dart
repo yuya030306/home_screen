@@ -23,6 +23,7 @@ class _GraphScreenState extends State<GraphScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedGoal = widget.selectedGoal;
     _fetchGoals();
   }
 
@@ -34,7 +35,9 @@ class _GraphScreenState extends State<GraphScreen> {
     setState(() {
       _goals = goals;
       if (_goals.isNotEmpty) {
-        _selectedGoal = _goals.contains(widget.selectedGoal) ? widget.selectedGoal : _goals.first;
+        _selectedGoal = _goals.contains(widget.selectedGoal)
+            ? widget.selectedGoal
+            : _goals.first;
         _updateGoalData();
       }
     });
@@ -48,10 +51,8 @@ class _GraphScreenState extends State<GraphScreen> {
 
   Future<void> _fetchGoalUnit() async {
     final firestore = FirebaseFirestore.instance;
-    final goalDoc = await firestore
-        .collection('goals')
-        .doc(_selectedGoal)
-        .get();
+    final goalDoc =
+        await firestore.collection('goals').doc(_selectedGoal).get();
 
     setState(() {
       _goalUnit = goalDoc.data()?['unit'] ?? '';
@@ -61,16 +62,15 @@ class _GraphScreenState extends State<GraphScreen> {
   Future<void> _fetchWeeklyData() async {
     final firestore = FirebaseFirestore.instance;
     final snapshot = await firestore
-        .collection('goals')
-        .doc(_selectedGoal)
         .collection('records')
+        .where('goal', isEqualTo: _selectedGoal)
         .orderBy('date')
         .get();
 
     List<_RecordData> records = snapshot.docs.map((doc) {
       return _RecordData(
-        date: doc['date'],
-        value: double.parse(doc['value']),
+        date: doc['date'] ?? '',
+        value: double.tryParse(doc['value'] ?? '0') ?? 0,
       );
     }).toList();
 
@@ -99,24 +99,26 @@ class _GraphScreenState extends State<GraphScreen> {
   Future<void> _fetchMonthlyData() async {
     final firestore = FirebaseFirestore.instance;
     final snapshot = await firestore
-        .collection('goals')
-        .doc(_selectedGoal)
         .collection('records')
+        .where('goal', isEqualTo: _selectedGoal)
         .orderBy('date')
         .get();
 
     List<_RecordData> records = snapshot.docs.map((doc) {
       return _RecordData(
-        date: doc['date'],
-        value: double.parse(doc['value']),
+        date: doc['date'] ?? '',
+        value: double.tryParse(doc['value'] ?? '0') ?? 0,
       );
     }).toList();
 
-    DateTime firstDayOfMonth = DateTime(_currentMonth.year, _currentMonth.month, 1);
-    DateTime lastDayOfMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
+    DateTime firstDayOfMonth =
+        DateTime(_currentMonth.year, _currentMonth.month, 1);
+    DateTime lastDayOfMonth =
+        DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
 
     Map<String, double> monthlyDataMap = Map.fromIterable(
-      List.generate(lastDayOfMonth.day, (index) => firstDayOfMonth.add(Duration(days: index))),
+      List.generate(lastDayOfMonth.day,
+          (index) => firstDayOfMonth.add(Duration(days: index))),
       key: (date) => date.toString().split(' ')[0],
       value: (date) => 0.0,
     );
@@ -142,9 +144,11 @@ class _GraphScreenState extends State<GraphScreen> {
   }
 
   void _nextMonth() {
-    if (_currentMonth.isBefore(DateTime(DateTime.now().year, DateTime.now().month, 1))) {
+    if (_currentMonth
+        .isBefore(DateTime(DateTime.now().year, DateTime.now().month, 1))) {
       setState(() {
-        _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
+        _currentMonth =
+            DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
         _fetchMonthlyData();
       });
     }
@@ -212,7 +216,9 @@ class _GraphScreenState extends State<GraphScreen> {
             ),
           ],
           Expanded(
-            child: _selectedPeriod == '週' ? _buildWeeklyChart() : _buildMonthlyChart(),
+            child: _selectedPeriod == '週'
+                ? _buildWeeklyChart()
+                : _buildMonthlyChart(),
           ),
         ],
       ),
@@ -227,7 +233,8 @@ class _GraphScreenState extends State<GraphScreen> {
       primaryYAxis: NumericAxis(
         minimum: 0,
         maximum: _weeklyData.isNotEmpty
-            ? _weeklyData.map((e) => e.value).reduce((a, b) => a > b ? a : b) + 10
+            ? _weeklyData.map((e) => e.value).reduce((a, b) => a > b ? a : b) +
+                10
             : 10,
         title: AxisTitle(text: _goalUnit),
         labelFormat: '{value}$_goalUnit',
@@ -236,7 +243,8 @@ class _GraphScreenState extends State<GraphScreen> {
       series: <ChartSeries>[
         LineSeries<_RecordData, String>(
           dataSource: _weeklyData,
-          xValueMapper: (_RecordData data, _) => data.date.split('-').last + '日',
+          xValueMapper: (_RecordData data, _) =>
+              data.date.split('-').last + '日',
           yValueMapper: (_RecordData data, _) => data.value,
         ),
       ],
@@ -251,7 +259,8 @@ class _GraphScreenState extends State<GraphScreen> {
       primaryYAxis: NumericAxis(
         minimum: 0,
         maximum: _monthlyData.isNotEmpty
-            ? _monthlyData.map((e) => e.value).reduce((a, b) => a > b ? a : b) + 10
+            ? _monthlyData.map((e) => e.value).reduce((a, b) => a > b ? a : b) +
+                10
             : 10,
         title: AxisTitle(text: _goalUnit),
         labelFormat: '{value}$_goalUnit',
@@ -260,7 +269,8 @@ class _GraphScreenState extends State<GraphScreen> {
       series: <ChartSeries>[
         LineSeries<_RecordData, String>(
           dataSource: _monthlyData,
-          xValueMapper: (_RecordData data, _) => data.date.split('-').last + '日',
+          xValueMapper: (_RecordData data, _) =>
+              data.date.split('-').last + '日',
           yValueMapper: (_RecordData data, _) => data.value,
         ),
       ],

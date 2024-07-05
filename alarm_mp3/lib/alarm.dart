@@ -35,7 +35,7 @@ class _AlarmPageState extends State<AlarmPage> {
     );
 
     if (alarmTime.isBefore(now)) {
-      // アラームが現在の時刻よりも前の場合、次の日に設定します。
+      // アラームが現在の時刻よりも前の場合、次の日に設定。
       alarmTime = alarmTime.add(Duration(days: 1));
     }
 
@@ -50,6 +50,7 @@ class _AlarmPageState extends State<AlarmPage> {
   }
 
   void _playAlarm() async {
+    await _audioPlayer.setReleaseMode(ReleaseMode.loop); // ループ再生に設定
     await _audioPlayer.play(AssetSource('alarm_sound.mp3'));
   }
 
@@ -131,8 +132,11 @@ class _AlarmPageState extends State<AlarmPage> {
                               onSelectedItemChanged: (index) {
                                 setState(() {
                                   _selectedHour = index;
-                                  _selectedTime = TimeOfDay(hour: _selectedHour, minute: _selectedMinute);
-                                  _alarmTimeString = _formatTime(_selectedTime!);
+                                  _selectedTime = TimeOfDay(
+                                      hour: _selectedHour,
+                                      minute: _selectedMinute);
+                                  _alarmTimeString =
+                                      _formatTime(_selectedTime!);
                                 });
                               },
                               childDelegate: ListWheelChildBuilderDelegate(
@@ -153,7 +157,8 @@ class _AlarmPageState extends State<AlarmPage> {
                               right: 0,
                               child: Text(
                                 '時',
-                                style: TextStyle(fontSize: 24, color: Colors.black),
+                                style: TextStyle(
+                                    fontSize: 24, color: Colors.black),
                               ),
                             ),
                           ],
@@ -173,8 +178,11 @@ class _AlarmPageState extends State<AlarmPage> {
                               onSelectedItemChanged: (index) {
                                 setState(() {
                                   _selectedMinute = index;
-                                  _selectedTime = TimeOfDay(hour: _selectedHour, minute: _selectedMinute);
-                                  _alarmTimeString = _formatTime(_selectedTime!);
+                                  _selectedTime = TimeOfDay(
+                                      hour: _selectedHour,
+                                      minute: _selectedMinute);
+                                  _alarmTimeString =
+                                      _formatTime(_selectedTime!);
                                 });
                               },
                               childDelegate: ListWheelChildBuilderDelegate(
@@ -195,7 +203,8 @@ class _AlarmPageState extends State<AlarmPage> {
                               right: 0,
                               child: Text(
                                 '分',
-                                style: TextStyle(fontSize: 24, color: Colors.black),
+                                style: TextStyle(
+                                    fontSize: 24, color: Colors.black),
                               ),
                             ),
                           ],

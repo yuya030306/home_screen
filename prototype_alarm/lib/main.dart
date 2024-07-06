@@ -4,7 +4,6 @@ import 'alarm.dart'; // AlarmPageをインポート
 import 'graph.dart'; // GraphPageをインポート
 import 'data_entry.dart'; // DataEntryPageをインポート
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
@@ -23,8 +22,13 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => AlarmPage(), // ルート '/' はAlarmPageにマッピング
         '/graph': (context) => GraphPage(), // ルート '/graph' はGraphPageにマッピング
-        '/data-entry': (context) => DataEntryPage(), // ルート '/data-entry' はDataEntryPageにマッピング
+        '/data-entry': (context) =>
+            DataEntryPage(), // ルート '/data-entry' はDataEntryPageにマッピング
       },
     );
   }
 }
+
+
+
+// testtest

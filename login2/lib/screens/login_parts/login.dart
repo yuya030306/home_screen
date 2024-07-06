@@ -55,8 +55,9 @@ class _LoginState extends State<Login> {
                 style: TextStyle(color: Colors.red),
               ),
             ),
-            ButtonTheme(
-              minWidth: 350.0,
+            SizedBox(
+              width: 350.0,
+              height: 50,
               child: ElevatedButton(
                 onPressed: () async {
                   try {
@@ -96,10 +97,11 @@ class _LoginState extends State<Login> {
                     });
                   }
                 },
-                child: Text(
-                  'ログイン',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
+                child: Text('ログイン',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    )),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
@@ -121,8 +123,9 @@ class _LoginState extends State<Login> {
         children: <Widget>[
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: ButtonTheme(
-              minWidth: 350.0,
+            child: SizedBox(
+              width: 370.0,
+              height: 50,
               child: ElevatedButton(
                 child: Text(
                   'アカウントを作成する',

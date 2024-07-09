@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
-import 'dart:async';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:provider/provider.dart';
+import 'alarm_manager.dart';
 
 class AlarmPage extends StatefulWidget {
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
+
   @override
   _AlarmPageState createState() => _AlarmPageState();
 }
@@ -12,98 +15,20 @@ class AlarmPage extends StatefulWidget {
 class _AlarmPageState extends State<AlarmPage> {
   TimeOfDay? _selectedTime;
   String? _alarmTimeString;
-  Timer? _timer;
-  final AudioPlayer _audioPlayer = AudioPlayer();
-
   int _selectedHour = 0;
   int _selectedMinute = 0;
 
   @override
   void initState() {
     super.initState();
-    _loadAlarmTime(); // アラーム時刻を読み込む
+    _loadInitialTime();
   }
 
-  Future<void> _loadAlarmTime() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+  void _loadInitialTime() {
+    final alarmManager = Provider.of<AlarmManager>(context, listen: false);
     setState(() {
-      _selectedHour = prefs.getInt('selectedHour') ?? 0;
-      _selectedMinute = prefs.getInt('selectedMinute') ?? 0;
-      _alarmTimeString = prefs.getString('alarmTimeString');
-      if (_alarmTimeString != null) {
-        _selectedTime = TimeOfDay(hour: _selectedHour, minute: _selectedMinute);
-        _startAlarmTimer();
-      }
+      _alarmTimeString = alarmManager.alarmTimeString;
     });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    _audioPlayer.dispose();
-    super.dispose();
-  }
-
-  Future<void> _saveAlarmTime() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('selectedHour', _selectedHour);
-    await prefs.setInt('selectedMinute', _selectedMinute);
-    await prefs.setString('alarmTimeString', _alarmTimeString!);
-  }
-
-  void _startAlarmTimer() {
-    final now = DateTime.now();
-    var alarmTime = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      _selectedHour,
-      _selectedMinute,
-    );
-
-    if (alarmTime.isBefore(now)) {
-      // アラームが現在の時刻よりも前の場合、次の日に設定します。
-      alarmTime = alarmTime.add(Duration(days: 1));
-    }
-
-    final duration = alarmTime.difference(now);
-
-    _timer?.cancel(); // 既存のタイマーをキャンセル
-
-    _timer = Timer(duration, () {
-      _playAlarm();
-      _showAlarmDialog();
-    });
-  }
-
-  void _playAlarm() async {
-    await _audioPlayer.setReleaseMode(ReleaseMode.loop); // ループ再生に設定
-    await _audioPlayer.play(AssetSource('alarm_sound.mp3'));
-  }
-
-  void _stopAlarm() {
-    _audioPlayer.stop();
-  }
-
-  void _showAlarmDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("アラーム"),
-          content: Text("今日の目標をセットする"),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                _stopAlarm();
-                Navigator.of(context).pop();
-              },
-              child: Text("アラームを停止"),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -124,7 +49,16 @@ class _AlarmPageState extends State<AlarmPage> {
             ElevatedButton(
               onPressed: _pickTime,
               child: Text(_alarmTimeString == null ? 'アラームをセット' : 'アラームを編集'),
-            )
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final alarmManager =
+                    Provider.of<AlarmManager>(context, listen: false);
+                alarmManager.stopAlarm();
+                Navigator.of(context).pop();
+              },
+              child: Text('アラームを停止'),
+            ),
           ],
         ),
       ),
@@ -148,7 +82,7 @@ class _AlarmPageState extends State<AlarmPage> {
                   children: [
                     Flexible(
                       child: Container(
-                        height: 150, // 明示的な高さを指定
+                        height: 150,
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
@@ -194,7 +128,7 @@ class _AlarmPageState extends State<AlarmPage> {
                     ),
                     Flexible(
                       child: Container(
-                        height: 150, // 明示的な高さを指定
+                        height: 150,
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
@@ -243,9 +177,11 @@ class _AlarmPageState extends State<AlarmPage> {
                 SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
+                    final alarmManager =
+                        Provider.of<AlarmManager>(context, listen: false);
+                    alarmManager.setAlarm(
+                        _selectedHour, _selectedMinute, _alarmTimeString!);
                     Navigator.of(context).pop();
-                    _startAlarmTimer(); // アラームタイマーを開始
-                    _saveAlarmTime(); // アラーム時間を保存
                   },
                   child: Text('OK'),
                 ),
@@ -260,7 +196,7 @@ class _AlarmPageState extends State<AlarmPage> {
   String _formatTime(TimeOfDay time) {
     final now = DateTime.now();
     final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
-    final format = DateFormat.jm(); // 'jm' => '5:08 PM'
+    final format = DateFormat.jm();
     return format.format(dt);
   }
 }

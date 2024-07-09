@@ -1,22 +1,69 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Ranking App',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
       ),
-      home: RankingScreen(),
+      home: const HomeScreen(),
+    );
+  }
+}
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _selectedIndex = 0;
+
+  static final List<Widget> _widgetOptions = <Widget>[
+    // AddDataScreen(), // データ入力部分のコードは除外
+    RankingScreen(),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _widgetOptions.elementAt(_selectedIndex),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add),
+            label: 'Add Record',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list),
+            label: 'Ranking',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.deepPurple,
+        onTap: _onItemTapped,
+      ),
     );
   }
 }
@@ -30,10 +77,18 @@ class _RankingScreenState extends State<RankingScreen> {
   String? _selectedCategory;
   List<Map<String, dynamic>> _rankingItems = [];
   final TextEditingController _categoryController = TextEditingController();
+  bool _isLoading = false;
 
   Future<void> _fetchRankingItems() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     if (_selectedCategory == null || _selectedCategory!.isEmpty) {
       print('カテゴリが選択されていません');
+      setState(() {
+        _isLoading = false;
+      });
       return;
     }
 
@@ -43,11 +98,36 @@ class _RankingScreenState extends State<RankingScreen> {
           .where('goal', isEqualTo: _selectedCategory)
           .get();
 
-      List<Map<String, dynamic>> rankingItems = snapshot.docs.map((doc) {
+      if (snapshot.docs.isEmpty) {
+        _showCategoryNotFoundDialog();
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      List<Map<String, dynamic>> rankingItems = await Future.wait(snapshot.docs.map((doc) async {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
         data['id'] = doc.id;
+
+        // ユーザ情報を取得
+        DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(data['userId'])
+            .get();
+
+        if (userSnapshot.exists) {
+          data['username'] = userSnapshot['username'];
+          data['avatarColor'] = userSnapshot['avatarColor'] != null
+              ? Color(int.parse(userSnapshot['avatarColor'], radix: 16))
+              : Colors.blue; // デフォルトカラーを設定
+        } else {
+          data['username'] = 'Unknown';
+          data['avatarColor'] = Colors.blue;
+        }
+
         return data;
-      }).toList();
+      }).toList());
 
       // アプリケーション側でソート
       rankingItems.sort((a, b) {
@@ -59,9 +139,13 @@ class _RankingScreenState extends State<RankingScreen> {
 
       setState(() {
         _rankingItems = rankingItems;
+        _isLoading = false;
       });
     } catch (e) {
       print('エラーが発生しました: $e');
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -70,6 +154,24 @@ class _RankingScreenState extends State<RankingScreen> {
       _selectedCategory = _categoryController.text.trim();
       _fetchRankingItems();
     });
+  }
+
+  void _showCategoryNotFoundDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('エラー'),
+        content: Text('そのカテゴリは存在しません。'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -105,14 +207,26 @@ class _RankingScreenState extends State<RankingScreen> {
               ],
             ),
           ),
-          if (_selectedCategory != null && _selectedCategory!.isNotEmpty)
+          if (_isLoading)
+            Expanded(
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else if (_selectedCategory != null && _selectedCategory!.isNotEmpty)
             Expanded(
               child: ListView.builder(
                 itemCount: _rankingItems.length,
                 itemBuilder: (context, index) {
                   final item = _rankingItems[index];
                   return ListTile(
-                    leading: Text('${index + 1}位'),
+                    leading: CircleAvatar(
+                      backgroundColor: item['avatarColor'],
+                      child: Text(
+                        item['username'][0].toUpperCase(),
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
                     title: Text(item['goal']),
                     subtitle: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

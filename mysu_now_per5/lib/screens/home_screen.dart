@@ -9,6 +9,7 @@ import 'settings_screen.dart';
 import 'camera_screen.dart';
 import 'package:camera/camera.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   final CameraDescription camera;
@@ -23,6 +24,21 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String goal = '目標を表示';
 
+  String _alarmTimeString = '00:00';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAlarmTime();
+  }
+
+  Future<void> _loadAlarmTime() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _alarmTimeString = prefs.getString('alarmTimeString') ?? '00:00';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,14 +51,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => AlarmPage()),
-                );
+                ).then((_) {
+                  _loadAlarmTime(); // アラームページから戻ってきた時にアラーム時刻を再読み込み
+                });
               },
               icon: Icon(Icons.alarm, size: 40),
               label: Text('アラーム設定'),
             ),
             SizedBox(height: 20),
             Text(
-              '00:00',
+              _alarmTimeString,
               style: TextStyle(fontSize: 48),
             ),
             SizedBox(height: 20),
@@ -66,7 +84,9 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => GoalsScreen(camera: widget.camera, userId: widget.userId)),
+                  MaterialPageRoute(
+                      builder: (context) => GoalsScreen(
+                          camera: widget.camera, userId: widget.userId)),
                 );
               },
               icon: Icon(Icons.edit, size: 32),
@@ -80,7 +100,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => RankingScreen()), // ランキング画面への遷移
+                      MaterialPageRoute(
+                          builder: (context) => RankingScreen()), // ランキング画面への遷移
                     );
                   },
                   icon: Icon(Icons.leaderboard, size: 32),
@@ -91,7 +112,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => TimeSettingScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => TimeSettingScreen()),
                     );
                   },
                   icon: Icon(Icons.access_time, size: 32),
@@ -128,7 +150,8 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => GraphScreen(selectedGoal: '')),
+                  MaterialPageRoute(
+                      builder: (context) => GraphScreen(selectedGoal: '')),
                 );
               },
             ),
@@ -137,7 +160,9 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => SettingsScreen(camera: widget.camera, userId: widget.userId)),
+                  MaterialPageRoute(
+                      builder: (context) => SettingsScreen(
+                          camera: widget.camera, userId: widget.userId)),
                 );
               },
             ),

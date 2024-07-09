@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
@@ -18,10 +19,36 @@ class _AlarmPageState extends State<AlarmPage> {
   int _selectedMinute = 0;
 
   @override
+  void initState() {
+    super.initState();
+    _loadAlarmTime(); // アラーム時刻を読み込む
+  }
+
+  Future<void> _loadAlarmTime() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _selectedHour = prefs.getInt('selectedHour') ?? 0;
+      _selectedMinute = prefs.getInt('selectedMinute') ?? 0;
+      _alarmTimeString = prefs.getString('alarmTimeString');
+      if (_alarmTimeString != null) {
+        _selectedTime = TimeOfDay(hour: _selectedHour, minute: _selectedMinute);
+        _startAlarmTimer();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _timer?.cancel();
     _audioPlayer.dispose();
     super.dispose();
+  }
+
+  Future<void> _saveAlarmTime() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('selectedHour', _selectedHour);
+    await prefs.setInt('selectedMinute', _selectedMinute);
+    await prefs.setString('alarmTimeString', _alarmTimeString!);
   }
 
   void _startAlarmTimer() {
@@ -64,14 +91,14 @@ class _AlarmPageState extends State<AlarmPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text("アラーム"),
-          content: Text("アラームが鳴っています！"),
+          content: Text("今日の目標をセットする"),
           actions: [
             ElevatedButton(
               onPressed: () {
                 _stopAlarm();
                 Navigator.of(context).pop();
               },
-              child: Text("アラームを止める"),
+              child: Text("アラームを停止"),
             ),
           ],
         );
@@ -90,14 +117,14 @@ class _AlarmPageState extends State<AlarmPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
-              _alarmTimeString ?? 'アラームがセットされていません',
+              _alarmTimeString ?? 'アラームをセットしてください',
               style: TextStyle(fontSize: 24),
             ),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: _pickTime,
-              child: Text('アラームをセット'),
-            ),
+              child: Text(_alarmTimeString == null ? 'アラームをセット' : 'アラームを編集'),
+            )
           ],
         ),
       ),
@@ -218,6 +245,7 @@ class _AlarmPageState extends State<AlarmPage> {
                   onPressed: () {
                     Navigator.of(context).pop();
                     _startAlarmTimer(); // アラームタイマーを開始
+                    _saveAlarmTime(); // アラーム時間を保存
                   },
                   child: Text('OK'),
                 ),

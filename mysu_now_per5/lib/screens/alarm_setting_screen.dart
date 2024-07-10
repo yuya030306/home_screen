@@ -3,10 +3,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'alarm_manager.dart';
+import 'goals/goal_screen.dart';  // GoalScreenをインポート
 
 class AlarmPage extends StatefulWidget {
   static final GlobalKey<NavigatorState> navigatorKey =
-      GlobalKey<NavigatorState>();
+  GlobalKey<NavigatorState>();
 
   @override
   _AlarmPageState createState() => _AlarmPageState();
@@ -52,10 +53,12 @@ class _AlarmPageState extends State<AlarmPage> {
             ),
             ElevatedButton(
               onPressed: () {
-                final alarmManager =
-                    Provider.of<AlarmManager>(context, listen: false);
+                final alarmManager = Provider.of<AlarmManager>(context, listen: false);
                 alarmManager.stopAlarm();
-                Navigator.of(context).pop();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => GoalScreen()),
+                );
               },
               child: Text('アラームを停止'),
             ),
@@ -178,7 +181,7 @@ class _AlarmPageState extends State<AlarmPage> {
                 ElevatedButton(
                   onPressed: () {
                     final alarmManager =
-                        Provider.of<AlarmManager>(context, listen: false);
+                    Provider.of<AlarmManager>(context, listen: false);
                     alarmManager.setAlarm(
                         _selectedHour, _selectedMinute, _alarmTimeString!);
                     Navigator.of(context).pop();

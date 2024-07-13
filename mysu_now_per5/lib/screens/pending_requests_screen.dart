@@ -8,16 +8,14 @@ class PendingRequestsScreen extends StatelessWidget {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<void> _acceptRequest(String requestId, String fromUserId) async {
+  Future<void> _acceptRequest(String requestId, String fromId) async {
     await _firestore.collection('friend_requests').doc(requestId).update({
       'status': 'accepted',
     });
-
     await _firestore.collection('users').doc(userId).update({
-      'friends': FieldValue.arrayUnion([fromUserId]),
+      'friends': FieldValue.arrayUnion([fromId]),
     });
-
-    await _firestore.collection('users').doc(fromUserId).update({
+    await _firestore.collection('users').doc(fromId).update({
       'friends': FieldValue.arrayUnion([userId]),
     });
   }
@@ -26,9 +24,10 @@ class PendingRequestsScreen extends StatelessWidget {
     await _firestore.collection('friend_requests').doc(requestId).delete();
   }
 
-  Future<String> _getUsername(String userId) async {
+  Future<Map<String, dynamic>> _getUserInfo(String userId) async {
     final docSnapshot = await _firestore.collection('users').doc(userId).get();
-    return docSnapshot.data()?['username'] ?? 'Unknown';
+    return docSnapshot.data() ??
+        {'username': 'Unknown', 'avatarColor': '000000'};
   }
 
   @override
@@ -60,31 +59,31 @@ class PendingRequestsScreen extends StatelessWidget {
             itemCount: requests.length,
             itemBuilder: (context, index) {
               final request = requests[index];
-              final fromUserId = request['from'];
+              final fromId = request['from'];
               final requestId = request.id;
 
-              return FutureBuilder<String>(
-                future: _getUsername(fromUserId),
+              return FutureBuilder<Map<String, dynamic>>(
+                future: _getUserInfo(fromId),
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
+                  if (!snapshot.hasData) {
                     return ListTile(
                       title: Text('Loading...'),
                     );
                   }
-                  if (!snapshot.hasData) {
-                    return ListTile(
-                      title: Text('Error loading username'),
-                    );
-                  }
-                  final username = snapshot.data!;
+                  final userInfo = snapshot.data!;
+                  final username = userInfo['username'];
+                  final avatarColor = userInfo['avatarColor'];
                   return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Color(int.parse('0x$avatarColor')),
+                    ),
                     title: Text(username),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
                           icon: Icon(Icons.check),
-                          onPressed: () => _acceptRequest(requestId, fromUserId),
+                          onPressed: () => _acceptRequest(requestId, fromId),
                         ),
                         IconButton(
                           icon: Icon(Icons.close),

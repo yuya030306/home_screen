@@ -13,8 +13,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 class HomeScreen extends StatefulWidget {
   final CameraDescription camera;
   final String userId;
+  final FirebaseAuth auth;
 
-  HomeScreen({required this.camera, required this.userId});
+  HomeScreen({required this.camera, required this.userId, required this.auth});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -66,7 +67,9 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => GoalsScreen(camera: widget.camera, userId: widget.userId)),
+                  MaterialPageRoute(
+                      builder: (context) => GoalsScreen(
+                          camera: widget.camera, userId: widget.userId)),
                 );
               },
               icon: Icon(Icons.edit, size: 32),
@@ -80,7 +83,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => RankingScreen()), // ランキング画面への遷移
+                      MaterialPageRoute(
+                          builder: (context) => RankingScreen()), // ランキング画面への遷移
                     );
                   },
                   icon: Icon(Icons.leaderboard, size: 32),
@@ -91,7 +95,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => TimeSettingScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => TimeSettingScreen()),
                     );
                   },
                   icon: Icon(Icons.access_time, size: 32),
@@ -128,7 +133,8 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => GraphScreen(selectedGoal: '')),
+                  MaterialPageRoute(
+                      builder: (context) => GraphScreen(selectedGoal: '')),
                 );
               },
             ),
@@ -137,7 +143,9 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => SettingsScreen(camera: widget.camera, userId: widget.userId)),
+                  MaterialPageRoute(
+                      builder: (context) => SettingsScreen(
+                          camera: widget.camera, userId: widget.userId)),
                 );
               },
             ),

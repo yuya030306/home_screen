@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'プロフィールアプリ',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.orange,
       ),
       home: ProfileScreen(),
     );
@@ -29,7 +29,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   String _username = "ユーザ名";
-  Color _avatarColor = Colors.blue;
+  Color _avatarColor = Colors.orange;
   User? _currentUser;
   bool _isLoading = true;
 
@@ -54,7 +54,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _username = documentSnapshot['username'];
             _avatarColor = documentSnapshot['avatarColor'] != null
                 ? Color(int.parse(documentSnapshot['avatarColor'], radix: 16))
-                : Colors.blue; // デフォルトカラーを設定
+                : Colors.orange; // デフォルトカラーを設定
             _isLoading = false;
           });
         } else {
@@ -81,77 +81,120 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('プロフィール'),
+        backgroundColor: Colors.orange,
+        elevation: 0,
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Stack(
+      body: CustomPaint(
+        painter: BackgroundPainter(),
+        child: _isLoading
+            ? Center(child: CircularProgressIndicator())
+            : Center(
+          child: Container(
+            width: 280, // 白い枠の幅を大きく
+            height: 370, // 白い枠の高さを大きく
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  offset: Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _avatarColor,
+                Stack(
+                  children: [
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _avatarColor,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 10,
+                            offset: Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: IconButton(
+                        icon: Icon(Icons.palette, color: Colors.white, size: 35.0),
+                        onPressed: () async {
+                          final color = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AvatarSelectionDialog(
+                                initialColor: _avatarColor,
+                              ),
+                            ),
+                          );
+
+                          if (color != null) {
+                            setState(() {
+                              _avatarColor = color;
+                            });
+                            _saveAvatarColor(color);
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+                Text(
+                  _username,
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
                   ),
                 ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: IconButton(
-                    icon: Icon(Icons.palette, color: Colors.white, size: 35.0),
-                    onPressed: () async {
-                      final color = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AvatarSelectionDialog(
-                            initialColor: _avatarColor,
-                          ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditProfileScreen(
+                          username: _username,
+                          avatarColor: _avatarColor,
                         ),
-                      );
+                      ),
+                    );
 
-                      if (color != null) {
-                        setState(() {
-                          _avatarColor = color;
-                        });
-                        _saveAvatarColor(color);
-                      }
-                    },
+                    if (result != null) {
+                      setState(() {
+                        _username = result['username'];
+                        _avatarColor = result['avatarColor'];
+                      });
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                  ),
+                  child: Text(
+                    'プロフィール編集',
+                    style: TextStyle(fontSize: 18),
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 20),
-            Text(
-              _username,
-              style: TextStyle(fontSize: 24),
-            ),
-            SizedBox(height: 70),
-            ElevatedButton(
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EditProfileScreen(
-                      username: _username,
-                      avatarColor: _avatarColor,
-                    ),
-                  ),
-                );
-
-                if (result != null) {
-                  setState(() {
-                    _username = result['username'];
-                    _avatarColor = result['avatarColor'];
-                  });
-                }
-              },
-              child: Text('プロフィール編集'),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -260,63 +303,103 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('プロフィール編集'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Stack(
-              children: [
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _selectedColor,
-                  ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: IconButton(
-                    icon: Icon(Icons.palette, color: Colors.white),
-                    onPressed: () async {
-                      final color = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AvatarSelectionDialog(
-                            initialColor: _selectedColor,
-                          ),
-                        ),
-                      );
+        appBar: AppBar(
+          title: Text('プロフィール編集'),
+          backgroundColor: Colors.orange,
+        ),
+        body: CustomPaint(
+        painter: BackgroundPainter(),
+    child: Center(
+    child: Container(
+    width: 300, // 白い枠の幅を小さく
+    height: 370, // 白い枠の高さを小さく
+    padding: EdgeInsets.all(20),
+    decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(20),
+    boxShadow: [
+    BoxShadow(
+    color: Colors.black12,
+    blurRadius: 10,
+    offset: Offset(0, 5),
+    ),
+    ],
+    ),
+    child: Column(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+    Stack(
+    children: [
+    Container(
+    width: 100,
+    height: 100,
+    decoration: BoxDecoration(
+    shape: BoxShape.circle,
+    color: _selectedColor,
+    boxShadow: [
+    BoxShadow(
+    color: Colors.black26,
+    blurRadius: 10,
+    offset: Offset(0, 5),
+    ),
+    ],
+    ),
+    ),
+    Positioned(
+    bottom: 0,
+      right: 0,
+      child: IconButton(
+        icon: Icon(Icons.palette, color: Colors.white),
+        onPressed: () async {
+          final color = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AvatarSelectionDialog(
+                initialColor: _selectedColor,
+              ),
+            ),
+          );
 
-                      if (color != null) {
-                        setState(() {
-                          _selectedColor = color;
-                        });
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 20),
-            TextField(
-              controller: _usernameController,
-              decoration: InputDecoration(labelText: 'ユーザ名'),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _isCheckingUsername ? null : _saveProfileChanges,
-              child: _isCheckingUsername
-                  ? CircularProgressIndicator()
-                  : Text('保存'),
-            ),
-          ],
+          if (color != null) {
+            setState(() {
+              _selectedColor = color;
+            });
+          }
+        },
+      ),
+    ),
+    ],
+    ),
+      SizedBox(height: 20),
+      TextField(
+        controller: _usernameController,
+        decoration: InputDecoration(
+          labelText: 'ユーザ名',
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       ),
+      SizedBox(height: 20),
+      ElevatedButton(
+        onPressed: _isCheckingUsername ? null : _saveProfileChanges,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.orange,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+        ),
+        child: _isCheckingUsername
+            ? CircularProgressIndicator()
+            : Text('保存', style: TextStyle(fontSize: 18)),
+      ),
+    ],
+    ),
+    ),
+    ),
+        ),
     );
   }
 
@@ -352,39 +435,46 @@ class _AvatarSelectionDialogState extends State<AvatarSelectionDialog> {
     return AlertDialog(
       title: Text('アイコン編集'),
       content: SingleChildScrollView(
-      child: Column(
-      children: [
-      Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: _selectedColor,
-      ),
-    ),
-    SizedBox(height: 20),
-    Text('カラー選択'),
-    SizedBox(height: 10),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
+        child: Column(
           children: [
-            _colorOption(Colors.red),
-            _colorOption(Colors.green),
-            _colorOption(Colors.blue),
-            _colorOption(Colors.yellow),
-            _colorOption(Colors.orange),
-            _colorOption(Colors.purple),
-            _colorOption(Colors.brown),
-            _colorOption(Colors.pink),
-            _colorOption(Colors.cyan),
-            _colorOption(Colors.lime),
-            _colorOption(Colors.indigo),
-            _colorOption(Colors.teal),
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _selectedColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 10,
+                    offset: Offset(0, 5),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 20),
+            Text('カラー選択'),
+            SizedBox(height: 10),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                _colorOption(Colors.red),
+                _colorOption(Colors.green),
+                _colorOption(Colors.blue),
+                _colorOption(Colors.yellow),
+                _colorOption(Colors.orange),
+                _colorOption(Colors.purple),
+                _colorOption(Colors.brown),
+                _colorOption(Colors.pink),
+                _colorOption(Colors.cyan),
+                _colorOption(Colors.lime),
+                _colorOption(Colors.indigo),
+                _colorOption(Colors.teal),
+              ],
+            ),
           ],
         ),
-      ],
-      ),
       ),
       actions: [
         TextButton(
@@ -410,10 +500,140 @@ class _AvatarSelectionDialogState extends State<AvatarSelectionDialog> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: color,
+          boxShadow: _selectedColor == color
+              ? [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 10,
+              offset: Offset(0, 5),
+            ),
+          ]
+              : [],
         ),
         child: _selectedColor == color ? Icon(Icons.check, color: Colors.white) : null,
       ),
     );
   }
 }
+
+class SettingsScreen extends StatefulWidget {
+  @override
+  _SettingsScreenState createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('設定'),
+        backgroundColor: Colors.orange,
+      ),
+      body: CustomPaint(
+        painter: BackgroundPainter(),
+        child: Center(
+          child: Container(
+            width: 300, // 白い枠の幅
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  offset: Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '設定画面',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    // 設定オプションの例
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                  ),
+                  child: Text(
+                    'オプション1',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    // 設定オプションの例
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                  ),
+                  child: Text(
+                    'オプション2',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class BackgroundPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.orange.shade100
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    path.moveTo(0, size.height * 0.3);
+    path.quadraticBezierTo(size.width * 0.5, size.height * 0.4, size.width, size.height * 0.3);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    canvas.drawPath(path, paint);
+
+    paint.color = Colors.orange.shade200;
+
+    path.reset();
+    path.moveTo(0, size.height * 0.5);
+    path.quadraticBezierTo(size.width * 0.5, size.height * 0.6, size.width, size.height * 0.5);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
+  }
+}
+
 

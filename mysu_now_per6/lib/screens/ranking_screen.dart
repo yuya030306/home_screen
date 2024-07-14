@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart'; // Add this import
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,7 +17,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Ranking App',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        primarySwatch: Colors.orange,
         useMaterial3: true,
       ),
       home: const HomeScreen(),
@@ -35,7 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
   static final List<Widget> _widgetOptions = <Widget>[
-    // AddDataScreen(), // データ入力部分のコードは除外
     RankingScreen(),
   ];
 
@@ -51,10 +51,6 @@ class _HomeScreenState extends State<HomeScreen> {
       body: _widgetOptions.elementAt(_selectedIndex),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add),
-            label: 'Add Record',
-          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.list),
             label: 'Ranking',
@@ -78,6 +74,7 @@ class _RankingScreenState extends State<RankingScreen> {
   List<Map<String, dynamic>> _rankingItems = [];
   final TextEditingController _categoryController = TextEditingController();
   bool _isLoading = false;
+  DateTime _selectedMonth = DateTime.now(); // Add this line
 
   Future<void> _fetchRankingItems() async {
     setState(() {
@@ -94,7 +91,7 @@ class _RankingScreenState extends State<RankingScreen> {
 
     try {
       QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('records')
+          .collection('goals')
           .where('goal', isEqualTo: _selectedCategory)
           .get();
 
@@ -106,34 +103,49 @@ class _RankingScreenState extends State<RankingScreen> {
         return;
       }
 
-      List<Map<String, dynamic>> rankingItems = await Future.wait(snapshot.docs.map((doc) async {
+      Map<String, Map<String, dynamic>> userBestRecords = {};
+
+      for (var doc in snapshot.docs) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        data['id'] = doc.id;
+        String userId = data['userId'] ?? 'Unknown';
 
-        // ユーザ情報を取得
-        DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(data['userId'])
-            .get();
+        // データのフィールドをチェックし、デフォルト値を設定
+        String username = 'Unknown';
+        Color avatarColor = Colors.blue;
+        if (data.containsKey('userId')) {
+          DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userId)
+              .get();
 
-        if (userSnapshot.exists) {
-          data['username'] = userSnapshot['username'];
-          data['avatarColor'] = userSnapshot['avatarColor'] != null
-              ? Color(int.parse(userSnapshot['avatarColor'], radix: 16))
-              : Colors.blue; // デフォルトカラーを設定
-        } else {
-          data['username'] = 'Unknown';
-          data['avatarColor'] = Colors.blue;
+          if (userSnapshot.exists) {
+            username = userSnapshot['username'] ?? 'Unknown';
+            avatarColor = (userSnapshot.data() as Map<String, dynamic>).containsKey('avatarColor')
+                ? Color(int.parse(userSnapshot['avatarColor'], radix: 16))
+                : Colors.blue;
+          }
         }
+        data['username'] = username;
+        data['avatarColor'] = avatarColor;
 
-        return data;
-      }).toList());
+        data['value'] = data.containsKey('value') ? double.tryParse(data['value'].toString()) ?? 0 : 0;
+        data['deadline'] = data.containsKey('deadline') && data['deadline'] is Timestamp
+            ? (data['deadline'] as Timestamp).toDate()
+            : (data['deadline'] ?? DateTime.now());
 
-      // アプリケーション側でソート
+        if (data['deadline'].month == _selectedMonth.month && data['deadline'].year == _selectedMonth.year) {
+          if (!userBestRecords.containsKey(userId) || userBestRecords[userId]!['value'] < data['value']) {
+            userBestRecords[userId] = data;
+          }
+        }
+      }
+
+      List<Map<String, dynamic>> rankingItems = userBestRecords.values.toList();
+
       rankingItems.sort((a, b) {
         int compare = (b['value'] as num).compareTo(a['value'] as num);
         if (compare != 0) return compare;
-        compare = (a['date'] as String).compareTo(b['date'] as String);
+        compare = (a['deadline'] as DateTime).compareTo(b['deadline'] as DateTime);
         return compare;
       });
 
@@ -174,6 +186,13 @@ class _RankingScreenState extends State<RankingScreen> {
     );
   }
 
+  void _changeMonth(int months) {
+    setState(() {
+      _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month + months);
+      _fetchRankingItems();
+    });
+  }
+
   @override
   void dispose() {
     _categoryController.dispose();
@@ -183,64 +202,164 @@ class _RankingScreenState extends State<RankingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('ランキング'),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
+        appBar: AppBar(
+          title: Text('ランキング'),
+          backgroundColor: Colors.orange,
+        ),
+        body: CustomPaint(
+          painter: BackgroundPainter(),
+          child: Column(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _categoryController,
-                    decoration: InputDecoration(
-                      labelText: 'カテゴリーを入力',
+          Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _categoryController,
+                  decoration: InputDecoration(
+                    labelText: 'カテゴリーを入力',
+                    fillColor: Colors.white,
+                    filled: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.search),
-                  onPressed: _onCategoryChanged,
-                ),
-              ],
-            ),
+              ),
+              IconButton(
+                icon: Icon(Icons.search),
+                onPressed: _onCategoryChanged,
+              ),
+            ],
           ),
-          if (_isLoading)
-            Expanded(
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
-            )
-          else if (_selectedCategory != null && _selectedCategory!.isNotEmpty)
-            Expanded(
-              child: ListView.builder(
-                itemCount: _rankingItems.length,
-                itemBuilder: (context, index) {
-                  final item = _rankingItems[index];
-                  return ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: item['avatarColor'],
-                      child: Text(
-                        item['username'][0].toUpperCase(),
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    title: Text(item['goal']),
-                    subtitle: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('記録: ${item['value']}'),
-                        Text('日付: ${item['date']}'),
-                      ],
-                    ),
-                  );
-                },
-              ),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            IconButton(
+              icon: Icon(Icons.arrow_left),
+              onPressed: () => _changeMonth(-1),
             ),
-        ],
+            Text(
+              DateFormat.yMMMM().format(_selectedMonth),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            IconButton(
+              icon: Icon(Icons.arrow_right),
+              onPressed: () => _changeMonth(1),
+            ),
+          ],
+        ),
+        if (_isLoading)
+    Expanded(
+      child: Center(
+        child: CircularProgressIndicator(),
       ),
+    )
+    else if (_selectedCategory != null && _selectedCategory!.isNotEmpty)
+    Expanded(
+    child: ListView.builder(
+    itemCount: _rankingItems.length,
+    itemBuilder: (context, index) {
+    final item = _rankingItems[index];
+    return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+    child: Container(
+    padding: const EdgeInsets.all(16.0),
+    decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(10),
+    boxShadow: [
+    BoxShadow(
+    color: Colors.black12,
+    blurRadius: 10,
+    offset: Offset(0, 5),
+    ),
+    ],
+    ),
+    child: Row(
+    children: [
+    Text(
+    '${index + 1}位',
+    style: TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.bold,
+    ),
+    ),
+    SizedBox(width: 10),
+    CircleAvatar(
+    backgroundColor: item['avatarColor'],
+    child: Text(
+    item['username'][0].toUpperCase(),
+    style: TextStyle(color: Colors.white),
+    ),
+    ),
+    SizedBox(width: 10),
+    Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+    Text(
+    item['username'],
+      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+    ),
+      SizedBox(height: 5),
+      Text(
+        '記録: ${item['value'].toInt()}',
+        style: TextStyle(fontSize: 16),
+      ),
+      Text(
+        '日付: ${DateFormat.yMMMd().format(item['deadline'] as DateTime)}',
+        style: TextStyle(fontSize: 14),
+      ),
+    ],
+    ),
+    ],
+    ),
+    ),
+    );
+    },
+    ),
+    ),
+              ],
+          ),
+        ),
     );
   }
 }
+
+class BackgroundPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.orange.shade100
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    path.moveTo(0, size.height * 0.3);
+    path.quadraticBezierTo(size.width * 0.5, size.height * 0.4, size.width, size.height * 0.3);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    canvas.drawPath(path, paint);
+
+    paint.color = Colors.orange.shade200;
+
+    path.reset();
+    path.moveTo(0, size.height * 0.5);
+    path.quadraticBezierTo(size.width * 0.5, size.height * 0.6, size.width, size.height * 0.5);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
+  }
+}
+

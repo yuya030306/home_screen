@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dashboard_screen.dart';
+import 'main.dart';  // navigatorKeyをインポート
 
 class GoalApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,  // navigatorKeyを設定
       title: 'Goal Manager',
       theme: ThemeData(
         primarySwatch: Colors.blue,

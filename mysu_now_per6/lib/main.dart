@@ -67,7 +67,7 @@ class MyApp extends StatelessWidget {
         theme: ThemeData.light(),
         home: Login(camera: camera),
         routes: {
-          '/alarm': (context) => AlarmPage(),
+          '/alarm': (context) => AlarmPage(camera: camera, userId: 'user_id'), // 必要な引数を渡す
           '/home': (context) => HomeScreen(camera: camera, userId: 'user_id'),
           '/login': (context) => Login(camera: camera),
         },
@@ -135,13 +135,18 @@ Future<void> initializeNotifications() async {
       ?.createNotificationChannel(channel);
 }
 
-void onDidReceiveNotificationResponse(NotificationResponse response) {
+void onDidReceiveNotificationResponse(NotificationResponse response) async {
   // 通知を選択した際の処理
   if (response.payload != null) {
-    navigatorKey.currentState?.push(
-      MaterialPageRoute(
-        builder: (context) => RecordGoalsScreen(camera: camera, userId: 'user_id'),
-      ),
-    );
+    String goalId = response.payload!; // ペイロードからgoalIdを取得
+    DocumentSnapshot goalSnapshot = await FirebaseFirestore.instance.collection('goals').doc(goalId).get();
+
+    if (goalSnapshot.exists) {
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (context) => RecordGoalsScreen(camera: camera, userId: 'user_id', goal: goalSnapshot),
+        ),
+      );
+    }
   }
 }

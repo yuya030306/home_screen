@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
+import 'package:camera/camera.dart';
 
 class CalendarScreen extends StatefulWidget {
   @override
+  final CameraDescription camera;
+  final String userId;
+  const CalendarScreen({Key? key, required this.camera, required this.userId}) : super(key: key);
   _CalendarScreenState createState() => _CalendarScreenState();
 }
 
@@ -42,7 +46,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Future<void> _fetchImages() async {
     FirebaseStorage storage = FirebaseStorage.instanceFor(bucket: 'gs://login-9ab9b.appspot.com');
-    final ListResult result = await storage.ref('downloads').listAll();
+    final ListResult result = await storage.ref(widget.userId).listAll();
     final List<Map<String, String>> urls = [];
     for (var ref in result.items) {
       final String url = await ref.getDownloadURL();
@@ -87,7 +91,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             headerStyle: HeaderStyle(
               formatButtonTextStyle: const TextStyle(color: Color.fromARGB(255, 0, 15, 100)),
               formatButtonDecoration: BoxDecoration(
-                color: Color.fromARGB(255, 30, 167, 247),
+                color: Color.fromARGB(255, 247, 178, 30),
                 borderRadius: BorderRadius.circular(16.0),
               ),
               formatButtonVisible: true,
@@ -131,11 +135,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     return '';
                 }
               },
-              weekendStyle: TextStyle().copyWith(color: Colors.red),
+              weekendStyle: TextStyle().copyWith(color: Color.fromARGB(255, 226, 147, 0)),
             ),
             calendarStyle: CalendarStyle(
               todayDecoration: BoxDecoration(
-                color: Color.fromARGB(255, 26, 79, 192),
+                color: Color.fromARGB(255, 224, 132, 70),
                 shape: BoxShape.circle,
               ),
               defaultTextStyle: TextStyle(color: Colors.black),

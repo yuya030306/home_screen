@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:camera/camera.dart'; // 必要なインポート
+import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 import 'package:intl/intl.dart';
-
 
 class CameraScreen extends StatefulWidget {
   final CameraDescription camera;
@@ -72,7 +71,8 @@ class _CameraScreenState extends State<CameraScreen> {
       FirebaseStorage storage = FirebaseStorage.instanceFor(bucket: 'gs://login-9ab9b.appspot.com');
       String formattedDate = DateFormat('yyyyMMdd').format(DateTime.now());
       String fileName = '${formattedDate}-${DateTime.now().millisecondsSinceEpoch}.jpg';
-      Reference ref = storage.ref().child('downloads/$fileName');
+      // Use userId in the storage path
+      Reference ref = storage.ref().child('${widget.userId}/$fileName');
       UploadTask uploadTask = ref.putFile(File(_imagePath!));
       await uploadTask.whenComplete(() {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Picture taken and uploaded!')));

@@ -52,7 +52,7 @@ class _GraphScreenState extends State<GraphScreen> {
   Future<void> _fetchGoalUnit() async {
     final firestore = FirebaseFirestore.instance;
     final goalDoc =
-        await firestore.collection('goals').doc(_selectedGoal).get();
+    await firestore.collection('goals').doc(_selectedGoal).get();
 
     setState(() {
       _goalUnit = goalDoc.data()?['unit'] ?? '';
@@ -112,13 +112,13 @@ class _GraphScreenState extends State<GraphScreen> {
     }).toList();
 
     DateTime firstDayOfMonth =
-        DateTime(_currentMonth.year, _currentMonth.month, 1);
+    DateTime(_currentMonth.year, _currentMonth.month, 1);
     DateTime lastDayOfMonth =
-        DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
+    DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
 
     Map<String, double> monthlyDataMap = Map.fromIterable(
       List.generate(lastDayOfMonth.day,
-          (index) => firstDayOfMonth.add(Duration(days: index))),
+              (index) => firstDayOfMonth.add(Duration(days: index))),
       key: (date) => date.toString().split(' ')[0],
       value: (date) => 0.0,
     );
@@ -159,105 +159,69 @@ class _GraphScreenState extends State<GraphScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('グラフ'),
-        backgroundColor: Colors.orange,
       ),
-      body: CustomPaint(
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildPeriodButton('週'),
-                  SizedBox(width: 10),
-                  _buildPeriodButton('月'),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: DropdownButton<String>(
-                        isExpanded: true,
-                        value: _selectedGoal,
-                        onChanged: (String? newValue) {
-                          if (newValue != null && _goals.contains(newValue)) {
-                            setState(() {
-                              _selectedGoal = newValue;
-                              _updateGoalData();
-                            });
-                          }
-                        },
-                        items:
-                            _goals.map<DropdownMenuItem<String>>((String goal) {
-                          return DropdownMenuItem<String>(
-                            value: goal,
-                            child: Text(goal),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ],
+      body: Column(
+        children: [
+          DropdownButton<String>(
+            value: _selectedPeriod,
+            onChanged: (String? newValue) {
+              setState(() {
+                if (newValue != null) {
+                  _selectedPeriod = newValue;
+                }
+              });
+            },
+            items: ['週', '月'].map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: DropdownButton<String>(
+              isExpanded: true,
+              value: _selectedGoal,
+              onChanged: (String? newValue) {
+                if (newValue != null && _goals.contains(newValue)) {
+                  setState(() {
+                    _selectedGoal = newValue;
+                    _updateGoalData();
+                  });
+                }
+              },
+              items: _goals.map<DropdownMenuItem<String>>((String goal) {
+                return DropdownMenuItem<String>(
+                  value: goal,
+                  child: Text(goal),
+                );
+              }).toList(),
+            ),
+          ),
+          if (_selectedPeriod == '月') ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.arrow_back),
+                  onPressed: _previousMonth,
                 ),
-              ),
-              if (_selectedPeriod == '月') ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextButton(
-                        onPressed: _previousMonth,
-                        child: Text('<',
-                            style:
-                                TextStyle(color: Colors.orange, fontSize: 32)),
-                      ),
-                      Text('${_currentMonth.year}年${_currentMonth.month}月',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold)),
-                      TextButton(
-                        onPressed: _nextMonth,
-                        child: Text('>',
-                            style:
-                                TextStyle(color: Colors.orange, fontSize: 32)),
-                      ),
-                    ],
-                  ),
+                Text('${_currentMonth.year}年${_currentMonth.month}月'),
+                IconButton(
+                  icon: Icon(Icons.arrow_forward),
+                  onPressed: _nextMonth,
                 ),
               ],
-              Expanded(
-                child: _selectedPeriod == '週'
-                    ? _buildWeeklyChart()
-                    : _buildMonthlyChart(),
-              ),
-            ],
+            ),
+          ],
+          Expanded(
+            child: _selectedPeriod == '週'
+                ? _buildWeeklyChart()
+                : _buildMonthlyChart(),
           ),
-        ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildPeriodButton(String period) {
-    bool isSelected = _selectedPeriod == period;
-    return ElevatedButton(
-      onPressed: () {
-        setState(() {
-          _selectedPeriod = period;
-          _updateGoalData();
-        });
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected ? Colors.orange : Colors.grey.shade200,
-        textStyle: TextStyle(fontSize: 20),
-        padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-      ),
-      child: Center(child: Text(period, style: TextStyle(color: Colors.white))),
     );
   }
 
@@ -270,21 +234,18 @@ class _GraphScreenState extends State<GraphScreen> {
         minimum: 0,
         maximum: _weeklyData.isNotEmpty
             ? _weeklyData.map((e) => e.value).reduce((a, b) => a > b ? a : b) +
-                10
+            10
             : 10,
         title: AxisTitle(text: _goalUnit),
         labelFormat: '{value}$_goalUnit',
       ),
-      title: ChartTitle(
-          text: '直近一週間のデータ',
-          textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      title: ChartTitle(text: '直近一週間のデータ'),
       series: <ChartSeries>[
         LineSeries<_RecordData, String>(
           dataSource: _weeklyData,
           xValueMapper: (_RecordData data, _) =>
-              data.date.split('-').last + '日',
+          data.date.split('-').last + '日',
           yValueMapper: (_RecordData data, _) => data.value,
-          color: Colors.orange,
         ),
       ],
     );
@@ -299,21 +260,18 @@ class _GraphScreenState extends State<GraphScreen> {
         minimum: 0,
         maximum: _monthlyData.isNotEmpty
             ? _monthlyData.map((e) => e.value).reduce((a, b) => a > b ? a : b) +
-                10
+            10
             : 10,
         title: AxisTitle(text: _goalUnit),
         labelFormat: '{value}$_goalUnit',
       ),
-      title: ChartTitle(
-          text: '${_currentMonth.month}月のデータ',
-          textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      title: ChartTitle(text: '${_currentMonth.month}月のデータ'),
       series: <ChartSeries>[
         LineSeries<_RecordData, String>(
           dataSource: _monthlyData,
           xValueMapper: (_RecordData data, _) =>
-              data.date.split('-').last + '日',
+          data.date.split('-').last + '日',
           yValueMapper: (_RecordData data, _) => data.value,
-          color: Colors.orange,
         ),
       ],
     );

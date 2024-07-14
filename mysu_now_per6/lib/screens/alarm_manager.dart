@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
-import 'alarm_setting_screen.dart'; // AlarmPage をインポート
+import 'alarm_setting_screen.dart';
 
 class AlarmManager extends ChangeNotifier {
   TimeOfDay? _selectedTime;
@@ -60,6 +60,10 @@ class AlarmManager extends ChangeNotifier {
     });
   }
 
+  void _navigateToAlarmPage() {
+    AlarmPage.navigatorKey.currentState?.pushReplacementNamed('/alarm');
+  }
+
   void _playAlarm() async {
     await _audioPlayer.setReleaseMode(ReleaseMode.loop);
     await _audioPlayer.play(AssetSource('alarm_sound.mp3'));
@@ -67,10 +71,6 @@ class AlarmManager extends ChangeNotifier {
 
   void _stopAlarm() {
     _audioPlayer.stop();
-  }
-
-  void _navigateToAlarmPage() {
-    AlarmPage.navigatorKey.currentState?.pushNamed('/alarm');
   }
 
   @override

@@ -29,9 +29,7 @@ dependencies:
   mailer: ^6.0.1
   fl_chart: ^0.68.0
   syncfusion_flutter_charts: ^20.1.58
-  shared_preferences: ^2.0.13
-  provider: ^6.0.3
-
+  connectivity_plus: ^6.0.3
 
 
 dev_dependencies:
@@ -44,3 +42,4 @@ flutter:
 
   assets:
     - assets/alarm_sound.mp3
+    - images/sample.jpg

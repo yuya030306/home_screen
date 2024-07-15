@@ -1,0 +1,3 @@
+[submodule "mysu_now_per5/mysu_now_per5/home_screen"]
+	path = mysu_now_per5/mysu_now_per5/home_screen
+	url = https://github.com/yuya030306/home_screen.git

@@ -17,8 +17,9 @@ import 'goals/dashboard_screen.dart';
 class HomeScreen extends StatefulWidget {
   final CameraDescription camera;
   final String userId;
+  final FirebaseAuth auth;  
 
-  HomeScreen({required this.camera, required this.userId});
+  HomeScreen({required this.camera, required this.userId,  required this.auth});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();

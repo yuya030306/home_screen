@@ -4,6 +4,7 @@ import 'package:camera/camera.dart';
 import 'package:provider/provider.dart';
 import 'screens/registration.dart';
 import 'screens/home_screen.dart';
+import 'screens/goals/dashboard_screen2.dart';
 import 'screens/login.dart';
 import 'screens/alarm_setting_screen.dart';
 import 'screens/alarm_manager.dart';
@@ -18,10 +19,12 @@ import 'screens/record_goals.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:android_intent_plus/flag.dart';
-import 'screens/goals/dashboard_screen2.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
 // グローバル変数として定義
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 late CameraDescription camera;
 
@@ -49,14 +52,17 @@ Future<void> main() async {
   final cameras = await availableCameras();
   camera = cameras.first;
 
-  runApp(MyApp(camera: camera));
+  final FirebaseAuth _auth = FirebaseAuth.instance; // ここで_authを定義
+
+  runApp(MyApp(camera: camera, auth: _auth)); // MyAppに_authを渡す
   Workmanager().initialize(callbackDispatcher);
 }
 
 class MyApp extends StatelessWidget {
   final CameraDescription camera;
+  final FirebaseAuth auth; // _authをプロパティとして追加
 
-  MyApp({required this.camera});
+  MyApp({required this.camera, required this.auth}); // コンストラクタで_authを受け取る
 
   @override
   Widget build(BuildContext context) {
@@ -68,8 +74,15 @@ class MyApp extends StatelessWidget {
         theme: ThemeData.light(),
         home: Login(camera: camera),
         routes: {
-          '/alarm': (context) => AlarmPage(camera: camera, userId: 'user_id'),
-          '/home': (context) => HomeScreen(camera: camera, userId: 'user_id'),
+          '/alarm': (context) => AlarmPage(
+                camera: camera,
+                userId: 'user_id',
+              ),
+          '/home': (context) => HomeScreen(
+                camera: camera,
+                userId: 'user_id',
+                auth: auth, // ここでauthを使用
+              ),
           '/login': (context) => Login(camera: camera),
         },
       ),
@@ -113,7 +126,8 @@ void callbackDispatcher() {
 }
 
 Future<void> initializeNotifications() async {
-  const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
 
   const InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
@@ -126,13 +140,15 @@ Future<void> initializeNotifications() async {
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
     'high_importance_channel', // 通知チャネルのID
     'High Importance Notifications', // 通知チャネルの名前
-    description: 'This channel is used for important notifications.', // 通知チャネルの説明
+    description:
+        'This channel is used for important notifications.', // 通知チャネルの説明
     importance: Importance.high,
   );
 
   // 通知チャネルの作成
   await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
       ?.createNotificationChannel(channel);
 }
 

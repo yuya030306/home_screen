@@ -1,16 +1,20 @@
 class AuthenticationError {
   String loginErrorMsg(String errorCode) {
     switch (errorCode) {
-      case 'ERROR_INVALID_EMAIL':
-        return '有効なメールアドレスを入力してください。';
-      case 'ERROR_USER_NOT_FOUND':
-        return 'メールアドレスかパスワードが間違っています。';
-      case 'ERROR_WRONG_PASSWORD':
-        return 'メールアドレスかパスワードが間違っています。';
-      case 'error':
-        return 'メールアドレスとパスワードを入力してください。';
+      case 'invalid-email':
+        return 'メールアドレスの形式が正しくありません。';
+      case 'wrong-password':
+        return 'パスワードが間違っています。';
+      case 'user-not-found':
+        return 'ユーザーが見つかりません。';
+      case 'user-disabled':
+        return 'このユーザーアカウントは無効化されています。';
+      case 'too-many-requests':
+        return '試行回数が多すぎます。後でもう一度試してください。';
+      case 'operation-not-allowed':
+        return 'この操作は許可されていません。';
       default:
-        return errorCode;
+        return '不明なエラーが発生しました。';
     }
   }
 

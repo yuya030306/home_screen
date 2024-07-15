@@ -232,7 +232,6 @@ class _LoginState extends State<Login> {
                       fullscreenDialog: true,
                       builder: (BuildContext context) => Registration(
                           camera: widget.camera,
-                          
                           userId: _auth.currentUser?.uid ?? ""),
                     ),
                   );

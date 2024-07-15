@@ -11,7 +11,12 @@ class EmailCheck extends StatefulWidget {
   final String userId;
 
   EmailCheck(
-      {Key? key, required this.email, required this.pswd, required this.from, required this.camera, required this.userId}) // コンストラクタに camera を追加
+      {Key? key,
+      required this.email,
+      required this.pswd,
+      required this.from,
+      required this.camera,
+      required this.userId}) // コンストラクタに camera を追加
       : super(key: key);
 
   @override
@@ -85,7 +90,11 @@ class _EmailCheckState extends State<EmailCheck> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => HomeScreen(camera: widget.camera,userId: widget.userId), // 修正: HomeScreen に変更
+                      builder: (context) => HomeScreen(
+                        camera: widget.camera,
+                        userId: widget.userId,
+                        auth: _auth,
+                      ), // 修正: HomeScreen に変更
                     ),
                   );
                 } else {

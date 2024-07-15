@@ -18,15 +18,14 @@ class FriendsListScreen extends StatelessWidget {
     });
   }
 
-  Future<String> _getUsername(String userId) async {
+  Future<Map<String, dynamic>> _getUserInfo(String userId) async {
     final docSnapshot = await _firestore.collection('users').doc(userId).get();
-    if (docSnapshot.exists) {
-      return docSnapshot.data()?['username'] ?? 'Unknown';
-    }
-    return 'Unknown';
+    return docSnapshot.data() ??
+        {'username': 'Unknown', 'avatarColor': '000000'};
   }
 
-  void _showDeleteConfirmationDialog(BuildContext context, String friendId, String username) {
+  void _showDeleteConfirmationDialog(
+      BuildContext context, String friendId, String username) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -58,6 +57,7 @@ class FriendsListScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('フレンド一覧'),
+        backgroundColor: Colors.orange,
       ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: _firestore.collection('users').doc(userId).snapshots(),
@@ -66,33 +66,45 @@ class FriendsListScreen extends StatelessWidget {
             return Center(child: CircularProgressIndicator());
           }
 
-          final userData = snapshot.data!.data() as Map<String, dynamic>?;
+          final userData = snapshot.data!.data() as Map<String, dynamic>;
+          final friends = List<String>.from(userData['friends']);
 
           if (userData == null || !userData.containsKey('friends')) {
             return Center(child: Text('フレンドがいません'));
           }
-
-          final friends = List<String>.from(userData['friends']);
 
           return ListView.builder(
             itemCount: friends.length,
             itemBuilder: (context, index) {
               final friendId = friends[index];
 
-              return FutureBuilder<String>(
-                future: _getUsername(friendId),
+              return FutureBuilder<Map<String, dynamic>>(
+                future: _getUserInfo(friendId),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return ListTile(
                       title: Text('Loading...'),
                     );
                   }
-                  final username = snapshot.data!;
+                  final userInfo = snapshot.data!;
+                  final username = userInfo['username'];
+                  final avatarColor = userInfo['avatarColor'];
                   return ListTile(
-                    title: Text(username),
+                    leading: CircleAvatar(
+                      backgroundColor: Color(int.parse('0x$avatarColor')),
+                      child: Text(
+                        username[0].toUpperCase(),
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    title: Text(
+                      username,
+                      style: TextStyle(fontSize: 22.0), // ここで名前のサイズを変更
+                    ),
                     trailing: IconButton(
                       icon: Icon(Icons.close),
-                      onPressed: () => _showDeleteConfirmationDialog(context, friendId, username),
+                      onPressed: () => _showDeleteConfirmationDialog(
+                          context, friendId, username),
                     ),
                   );
                 },
@@ -101,16 +113,45 @@ class FriendsListScreen extends StatelessWidget {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => FriendRequestScreen(userId: userId),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: SizedBox(
+              width: 370.0,
+              height: 65,
+              child: ElevatedButton.icon(
+                icon: Icon(
+                  Icons.add,
+                  color: Colors.white,
+                  size: 40.0,
+                ),
+                label: Text(
+                  'フレンドを追加する',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange, // 修正点：backgroundColor を使用
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FriendRequestScreen(userId: userId),
+                    ),
+                  );
+                },
+              ),
             ),
-          );
-        },
-        child: Icon(Icons.add),
+          ),
+        ],
       ),
     );
   }

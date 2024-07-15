@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'pending_requests_screen.dart';
 
 class FriendRequestScreen extends StatefulWidget {
   final String userId;
@@ -48,6 +49,9 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('フレンド申請を送信しました')),
     );
+
+    _controller.clear();
+    _getPendingRequestsCount();
   }
 
   Future<void> _getPendingRequestsCount() async {
@@ -62,15 +66,23 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
     });
   }
 
+  Future<Map<String, dynamic>> _getUserInfo(String userId) async {
+    final docSnapshot = await _firestore.collection('users').doc(userId).get();
+    return docSnapshot.data() ??
+        {'username': 'Unknown', 'avatarColor': '000000'};
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('フレンド申請'),
+        backgroundColor: Colors.orange,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.of(context).pop();
+            _getPendingRequestsCount(); // 戻った際にリクエスト数を更新
           },
         ),
       ),
@@ -78,152 +90,101 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(
-              controller: _controller,
-              decoration: InputDecoration(labelText: 'ユーザー名'),
+            Padding(
+              padding: EdgeInsets.fromLTRB(25.0, 10, 25.0, 0.0),
+              child: TextFormField(
+                controller: _controller,
+                decoration: InputDecoration(
+                  labelText: "ユーザー名",
+                  hintText: "ユーザー名を入力してください",
+                  prefixIcon: Icon(Icons.person),
+                  fillColor: Colors.orange[50],
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.orange, width: 2.0),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.grey, width: 1.0),
+                  ),
+                  labelStyle: TextStyle(
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             ),
             SizedBox(height: 16.0),
-            ElevatedButton(
-              onPressed: _sendFriendRequest,
-              child: Text('フレンド申請を送信'),
+            SizedBox(
+              width: 250,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _sendFriendRequest,
+                child: Text(
+                  'フレンド申請を送信',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
             ),
-            SizedBox(height: 16.0),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
+            SizedBox(height: 100.0),
+            ElevatedButton.icon(
+              icon: Icon(
+                Icons.pending_actions,
+                color: Colors.white,
+                size: 24.0,
+              ),
+              label: Text(
+                'フレンド承認待ち',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontSize: 18.0,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
                         PendingRequestsScreen(userId: widget.userId),
                   ),
                 );
+                _getPendingRequestsCount(); // 承認待ち画面から戻った際にリクエスト数を更新
               },
-              child: Row(
-                children: [
-                  Text('フレンド承認待ち', style: TextStyle(fontSize: 18)),
-                  SizedBox(width: 8.0),
-                  if (pendingRequestsCount > 0)
-                    Container(
-                      padding:
-                      EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
-                      child: Text(
-                        '$pendingRequestsCount件',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
-                    ),
-                ],
-              ),
             ),
+            if (pendingRequestsCount > 0)
+              Container(
+                margin: EdgeInsets.only(top: 8.0),
+                padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                child: Text(
+                  '$pendingRequestsCount件',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class PendingRequestsScreen extends StatelessWidget {
-  final String userId;
-
-  PendingRequestsScreen({required this.userId});
-
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  Future<void> _acceptRequest(String requestId, String fromUserId) async {
-    await _firestore.collection('friend_requests').doc(requestId).update({
-      'status': 'accepted',
-    });
-
-    await _firestore.collection('users').doc(userId).update({
-      'friends': FieldValue.arrayUnion([fromUserId]),
-    });
-
-    await _firestore.collection('users').doc(fromUserId).update({
-      'friends': FieldValue.arrayUnion([userId]),
-    });
-  }
-
-  Future<void> _rejectRequest(String requestId) async {
-    await _firestore.collection('friend_requests').doc(requestId).update({
-      'status': 'rejected',
-    });
-  }
-
-  Future<String> _getUsername(String userId) async {
-    final docSnapshot = await _firestore.collection('users').doc(userId).get();
-    if (docSnapshot.exists) {
-      return docSnapshot.data()?['username'] ?? 'Unknown';
-    }
-    return 'Unknown';
-  }
-
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('フレンド承認待ち'),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
-      ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore
-            .collection('friend_requests')
-            .where('to', isEqualTo: userId)
-            .where('status', isEqualTo: 'pending')
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator());
-          }
-
-          final requests = snapshot.data!.docs;
-
-          return ListView.builder(
-            itemCount: requests.length,
-            itemBuilder: (context, index) {
-              final request = requests[index];
-              final fromUserId = request['from'];
-              final requestId = request.id;
-
-              return FutureBuilder<String>(
-                future: _getUsername(fromUserId),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return ListTile(
-                      title: Text('Loading...'),
-                    );
-                  }
-                  final username = snapshot.data!;
-                  return ListTile(
-                    title: Text(username),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.check),
-                          onPressed: () =>
-                              _acceptRequest(requestId, fromUserId),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.close),
-                          onPressed: () => _rejectRequest(requestId),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
-          );
-        },
       ),
     );
   }

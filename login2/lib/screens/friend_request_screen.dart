@@ -1,30 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// フレンドリクエスト画面のクラス
 class FriendRequestScreen extends StatefulWidget {
   final String userId;
-
+  //required 修飾子を使用して、コンストラクタの呼び出し時にこのフィールドが必須であることを示す
   FriendRequestScreen({required this.userId});
 
   @override
   _FriendRequestScreenState createState() => _FriendRequestScreenState();
 }
 
+// フレンドリクエスト画面の状態管理クラス
 class _FriendRequestScreenState extends State<FriendRequestScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   TextEditingController _controller = TextEditingController();
-  int pendingRequestsCount = 0;
+  int pendingRequestsCount = 0; //承認待ちのフレンドリクエストの数
 
   @override
   void initState() {
     super.initState();
-    _getPendingRequestsCount();
+    //これにより、ウィジェットの初期化時に承認待ちのフレンドリクエスト数を取得し、表示の更新を行うことができる
+    _getPendingRequestsCount(); // 承認待ちのフレンドリクエスト数を取得する
   }
 
+  // フレンドリクエストを送信するメソッド
   Future<void> _sendFriendRequest() async {
     String friendUsername = _controller.text;
     if (friendUsername.isEmpty) return;
 
+    // ユーザー名で検索
     QuerySnapshot query = await _firestore
         .collection('users')
         .where('username', isEqualTo: friendUsername)
@@ -78,18 +83,75 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(
-              controller: _controller,
-              decoration: InputDecoration(labelText: 'ユーザー名'),
+            Padding(
+              padding: EdgeInsets.fromLTRB(25.0, 10, 25.0, 0.0),
+              child: TextFormField(
+                controller: _controller,
+                decoration: InputDecoration(
+                  labelText: "ユーザー名",
+                  hintText: "ユーザー名を入力してください",
+                  prefixIcon: Icon(Icons.person),
+                  fillColor: Colors.lightBlue[50],
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.blue, width: 2.0),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.grey, width: 1.0),
+                  ),
+                  labelStyle: TextStyle(
+                    color: Colors.blue,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             ),
             SizedBox(height: 16.0),
-            ElevatedButton(
-              onPressed: _sendFriendRequest,
-              child: Text('フレンド申請を送信'),
+            SizedBox(
+              width: 250, // 幅を親ウィジェットの幅に合わせる
+              height: 50, // 高さを指定
+              child: ElevatedButton(
+                onPressed: _sendFriendRequest,
+                child: Text(
+                  'フレンド申請を送信',
+                  style: TextStyle(
+                    fontSize: 18, // 文字サイズを大きく
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
             ),
-            SizedBox(height: 16.0),
-            GestureDetector(
-              onTap: () {
+            SizedBox(height: 100.0),
+            ElevatedButton.icon(
+              icon: Icon(
+                Icons.pending_actions,
+                color: Colors.white,
+                size: 24.0,
+              ),
+              label: Text(
+                'フレンド承認待ち',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontSize: 18.0,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green, // ボタンの背景色を緑に設定
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -98,26 +160,20 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
                   ),
                 );
               },
-              child: Row(
-                children: [
-                  Text('フレンド承認待ち', style: TextStyle(fontSize: 18)),
-                  SizedBox(width: 8.0),
-                  if (pendingRequestsCount > 0)
-                    Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
-                      child: Text(
-                        '$pendingRequestsCount件',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
-                    ),
-                ],
-              ),
             ),
+            if (pendingRequestsCount > 0)
+              Container(
+                margin: EdgeInsets.only(top: 8.0),
+                padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                child: Text(
+                  '$pendingRequestsCount件',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ),
           ],
         ),
       ),

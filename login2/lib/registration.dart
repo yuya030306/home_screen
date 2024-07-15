@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'authentication_error.dart';
-import 'email_check.dart';
+import '../../authentication_error.dart';
+import '../../email_check.dart';
 
 class Registration extends StatefulWidget {
   @override
@@ -26,30 +26,82 @@ class _RegistrationState extends State<Registration> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        title: Text('新規アカウントの作成'),
+      ),
       body: Center(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.max,
           children: <Widget>[
             Padding(
-              padding: EdgeInsets.fromLTRB(25.0, 0, 25.0, 30.0),
-              child: Text(
-                '新規アカウントの作成',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              padding: EdgeInsets.only(bottom: 50.0, top: 130.0), // 画像の下に余白を追加
+              child: Image(
+                image: AssetImage('images/sample.jpg'),
+                width: 110.0,
+                height: 150.0,
               ),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(25.0, 0, 25.0, 0),
+              padding: EdgeInsets.fromLTRB(25.0, 0, 25.0, 10.0),
               child: TextFormField(
-                decoration: InputDecoration(labelText: "ユーザーネーム"),
+                decoration: InputDecoration(
+                  labelText: "ユーザーネーム",
+                  hintText: "例: username123",
+                  prefixIcon: Icon(Icons.person), // アイコンを追加
+                  fillColor: Colors.lightBlue[50],
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(40.0), // 角丸にする
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide:
+                        BorderSide(color: Colors.blue, width: 2.0), // フォーカス時の色
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide:
+                        BorderSide(color: Colors.grey, width: 1.0), // 通常時の色と幅
+                  ),
+                  labelStyle: TextStyle(
+                    color: Colors.blue,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 onChanged: (String value) {
                   _newUsername = value;
                 },
               ),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(25.0, 0, 25.0, 0),
+              padding: EdgeInsets.fromLTRB(25.0, 0, 25.0, 10.0),
               child: TextFormField(
-                decoration: InputDecoration(labelText: "メールアドレス"),
+                decoration: InputDecoration(
+                  labelText: "メールアドレス",
+                  hintText: "例: user@example.com",
+                  prefixIcon: Icon(Icons.email), // アイコンを追加
+                  fillColor: Colors.lightBlue[50],
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(40.0), // 角丸にする
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide:
+                        BorderSide(color: Colors.blue, width: 2.0), // フォーカス時の色
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide:
+                        BorderSide(color: Colors.grey, width: 1.0), // 通常時の色と幅
+                  ),
+                  labelStyle: TextStyle(
+                    color: Colors.blue,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 onChanged: (String value) {
                   _newEmail = value;
                 },
@@ -58,11 +110,30 @@ class _RegistrationState extends State<Registration> {
             Padding(
               padding: EdgeInsets.fromLTRB(25.0, 0, 25.0, 10.0),
               child: TextFormField(
-                decoration: InputDecoration(labelText: "パスワード（8～20文字）"),
+                decoration: InputDecoration(
+                  labelText: "パスワード（6～20文字）",
+                  hintText: "パスワードを入力してください",
+                  prefixIcon: Icon(Icons.lock),
+                  fillColor: Colors.lightBlue[50],
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(40.0),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.blue, width: 2.0),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.grey, width: 1.0),
+                  ),
+                  labelStyle: TextStyle(
+                    color: Colors.blue,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 obscureText: true,
                 maxLength: 20,
                 onChanged: (String value) {
-                  if (value.length >= 8) {
+                  if (value.length >= 6) {
                     _newPassword = value;
                     _pswdOK = true;
                   } else {
@@ -75,23 +146,16 @@ class _RegistrationState extends State<Registration> {
               padding: EdgeInsets.fromLTRB(20.0, 0, 20.0, 5.0),
               child: Text(
                 _infoText,
-                style: TextStyle(color: Colors.red),
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 18.0,
+                ),
               ),
             ),
-            ButtonTheme(
-              minWidth: 350.0,
+            SizedBox(
+              width: 350.0,
+              height: 50,
               child: ElevatedButton(
-                child: Text(
-                  '登録',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
                 onPressed: () async {
                   if (_pswdOK) {
                     try {
@@ -146,17 +210,25 @@ class _RegistrationState extends State<Registration> {
                     }
                   } else {
                     setState(() {
-                      _infoText = 'パスワードは8文字以上です。';
+                      _infoText = 'パスワードは6文字以上です。';
                     });
                   }
                 },
+                child: Text(
+                  '登録',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
               ),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('ログイン画面に戻る'),
             ),
           ],
         ),

@@ -25,6 +25,14 @@ class _SetGoalValueScreenState extends State<SetGoalValueScreen> {
       final DateTime now = DateTime.now();
       final DateTime deadline = DateTime(now.year, now.month, now.day, _selectedTime!.hour, _selectedTime!.minute);
 
+      // 締切時間が現在時刻より前かどうかをチェック
+      if (deadline.isBefore(now)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('締切時間は現在時刻より後に設定してください')),
+        );
+        return;
+      }
+
       FirebaseFirestore.instance.collection('goals').add({
         'goal': widget.selectedPreset,
         'unit': widget.selectedUnit,
@@ -37,6 +45,10 @@ class _SetGoalValueScreenState extends State<SetGoalValueScreen> {
       });
 
       Navigator.of(context).pop();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('すべてのフィールドを入力してください')),
+      );
     }
   }
 

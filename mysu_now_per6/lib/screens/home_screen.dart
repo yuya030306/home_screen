@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
+import 'goals/dashboard_screen2.dart';
 
 class HomeScreen extends StatefulWidget {
   final CameraDescription camera;
@@ -53,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 1:
         return CalendarScreen(camera: widget.camera, userId: widget.userId);
       case 2:
-        return GraphScreen(selectedGoal: '');
+        return GraphScreen(selectedGoal: '', camera: widget.camera, userId: widget.userId);
       case 3:
         return SettingsScreen(camera: widget.camera, userId: widget.userId);
       default:
@@ -146,7 +147,7 @@ class HomeContent extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => AlarmPage()),
+                  MaterialPageRoute(builder: (context) => AlarmPage(camera: camera, userId: userId)),
                 ).then((_) {
                   reloadAlarmTime(); // アラームページから戻ってきた時にアラーム時刻を再読み込み
                 });
@@ -237,7 +238,7 @@ class HomeContent extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => RecordGoalsScreen(
+                          builder: (context) => DashboardScreen2(
                               camera: camera, userId: userId)),
                     );
                   },

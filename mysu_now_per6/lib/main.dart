@@ -153,8 +153,10 @@ void onDidReceiveNotificationResponse(NotificationResponse response) {
   if (response.payload != null) {
     navigatorKey.currentState?.push(
       MaterialPageRoute(
-        builder: (context) =>
-            RecordGoalsScreen(camera: camera, userId: 'user_id'),
+        builder: (context) => RecordGoalsScreen(
+          camera: camera,
+          userId: 'user_id',
+        ),
       ),
     );
   }

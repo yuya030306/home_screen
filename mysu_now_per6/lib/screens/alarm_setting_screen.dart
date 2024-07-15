@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'alarm_manager.dart';
-import 'goals/goal_screen.dart';
+import 'goals/dashboard_screen.dart';
+import 'package:camera/camera.dart';
 
 class AlarmPage extends StatefulWidget {
   static final GlobalKey<NavigatorState> navigatorKey =
-      GlobalKey<NavigatorState>();
+  GlobalKey<NavigatorState>();
+
+  final CameraDescription camera;
+  final String userId;
+
+  AlarmPage({required this.camera, required this.userId});
 
   @override
   _AlarmPageState createState() => _AlarmPageState();
@@ -82,11 +88,13 @@ class _AlarmPageState extends State<AlarmPage> {
                 ElevatedButton(
                   onPressed: () {
                     final alarmManager =
-                        Provider.of<AlarmManager>(context, listen: false);
+                    Provider.of<AlarmManager>(context, listen: false);
                     alarmManager.stopAlarm();
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => GoalScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => DashboardScreen(
+                              camera: widget.camera, userId: widget.userId)),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -113,14 +121,14 @@ class _AlarmPageState extends State<AlarmPage> {
     TimeOfDay initialTime = _selectedTime ?? TimeOfDay(hour: 0, minute: 0);
     if (alarmManager.alarmTimeString != null) {
       final alarmTime =
-          DateFormat('a h:mm').parse(alarmManager.alarmTimeString!);
+      DateFormat.jm().parse(alarmManager.alarmTimeString!);
       initialTime = TimeOfDay(hour: alarmTime.hour, minute: alarmTime.minute);
     }
 
     final hourController =
-        FixedExtentScrollController(initialItem: initialTime.hour);
+    FixedExtentScrollController(initialItem: initialTime.hour);
     final minuteController =
-        FixedExtentScrollController(initialItem: initialTime.minute);
+    FixedExtentScrollController(initialItem: initialTime.minute);
 
     showDialog(
       context: context,
@@ -236,7 +244,7 @@ class _AlarmPageState extends State<AlarmPage> {
                 ElevatedButton(
                   onPressed: () {
                     final alarmManager =
-                        Provider.of<AlarmManager>(context, listen: false);
+                    Provider.of<AlarmManager>(context, listen: false);
                     alarmManager.setAlarm(
                         _selectedHour, _selectedMinute, _alarmTimeString!);
                     Navigator.of(context).pop();
@@ -262,11 +270,8 @@ class _AlarmPageState extends State<AlarmPage> {
   String _formatTime(TimeOfDay time) {
     final now = DateTime.now();
     final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
-    final format = DateFormat('a h:mm'); // AM/PMの形式
-    return format
-        .format(dt)
-        .replaceFirst(' ', ' ')
-        .toUpperCase(); // AM/PM表記のカスタマイズ
+    final format = DateFormat.jm(); // AM/PMの形式
+    return format.format(dt).toUpperCase(); // AM/PM表記のカスタマイズ
   }
 }
 

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'main.dart'; // flutterLocalNotificationsPluginをインポート
 
 class SetGoalValueScreen extends StatefulWidget {
   final String? selectedPreset;
@@ -26,7 +29,11 @@ class _SetGoalValueScreenState extends State<SetGoalValueScreen> {
         'unit': widget.selectedUnit,
         'value': _valueController.text,
         'deadline': deadline,
+      }).then((documentReference) {
+        // 目標が追加された後に通知をスケジュール
+        scheduleNotification(documentReference.id, widget.selectedPreset!, deadline);
       });
+
       Navigator.of(context).pop();
     }
   }
@@ -93,6 +100,28 @@ class _SetGoalValueScreenState extends State<SetGoalValueScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  void scheduleNotification(String goalId, String goal, DateTime scheduledTime) async {
+    var androidDetails = const AndroidNotificationDetails(
+      'high_importance_channel', // 通知チャネルのID
+      'High Importance Notifications', // 通知チャネルの名前
+      channelDescription: 'This channel is used for important notifications.', // 通知チャネルの説明
+      importance: Importance.high,
+    );
+    var generalNotificationDetails = NotificationDetails(android: androidDetails);
+
+    print('Scheduled time: $scheduledTime'); // スケジュールされる時間を確認するためのデバッグ出力
+
+    await flutterLocalNotificationsPlugin.zonedSchedule(
+      0,
+      'Goal Reminder',
+      'Time to achieve your goal: $goal',
+      tz.TZDateTime.from(scheduledTime, tz.local),  // 指定した日時に一度だけ通知を送信
+      generalNotificationDetails,
+      androidAllowWhileIdle: true,
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 }

@@ -24,9 +24,10 @@ class PendingRequestsScreen extends StatelessWidget {
     await _firestore.collection('friend_requests').doc(requestId).delete();
   }
 
-  Future<String> _getUsername(String userId) async {
+  Future<Map<String, dynamic>> _getUserInfo(String userId) async {
     final docSnapshot = await _firestore.collection('users').doc(userId).get();
-    return docSnapshot.data()?['username'] ?? 'Unknown';
+    return docSnapshot.data() ??
+        {'username': 'Unknown', 'avatarColor': '000000'};
   }
 
   @override
@@ -53,28 +54,34 @@ class PendingRequestsScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final request = requests[index];
               final fromId = request['from'];
+              final requestId = request.id;
 
-              return FutureBuilder<String>(
-                future: _getUsername(fromId),
+              return FutureBuilder<Map<String, dynamic>>(
+                future: _getUserInfo(fromId),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return ListTile(
                       title: Text('Loading...'),
                     );
                   }
-                  final username = snapshot.data!;
+                  final userInfo = snapshot.data!;
+                  final username = userInfo['username'];
+                  final avatarColor = userInfo['avatarColor'];
                   return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Color(int.parse('0x$avatarColor')),
+                    ),
                     title: Text(username),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
                           icon: Icon(Icons.check),
-                          onPressed: () => _acceptRequest(request.id, fromId),
+                          onPressed: () => _acceptRequest(requestId, fromId),
                         ),
                         IconButton(
                           icon: Icon(Icons.close),
-                          onPressed: () => _rejectRequest(request.id),
+                          onPressed: () => _rejectRequest(requestId),
                         ),
                       ],
                     ),

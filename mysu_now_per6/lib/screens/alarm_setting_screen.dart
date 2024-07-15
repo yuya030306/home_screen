@@ -6,7 +6,9 @@ import 'goals/dashboard_screen.dart';
 import 'package:camera/camera.dart';
 
 class AlarmPage extends StatefulWidget {
-  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
+
   final CameraDescription camera;
   final String userId;
 
@@ -90,7 +92,9 @@ class _AlarmPageState extends State<AlarmPage> {
                     alarmManager.stopAlarm();
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => DashboardScreen(camera: widget.camera, userId: widget.userId)),
+                      MaterialPageRoute(
+                          builder: (context) => DashboardScreen(
+                              camera: widget.camera, userId: widget.userId)),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -116,8 +120,7 @@ class _AlarmPageState extends State<AlarmPage> {
     final alarmManager = Provider.of<AlarmManager>(context, listen: false);
     TimeOfDay initialTime = _selectedTime ?? TimeOfDay(hour: 0, minute: 0);
     if (alarmManager.alarmTimeString != null) {
-      final alarmTime =
-          DateFormat('a h:mm').parse(alarmManager.alarmTimeString!);
+      final alarmTime = DateFormat.jm().parse(alarmManager.alarmTimeString!);
       initialTime = TimeOfDay(hour: alarmTime.hour, minute: alarmTime.minute);
     }
 
@@ -133,7 +136,7 @@ class _AlarmPageState extends State<AlarmPage> {
           contentPadding: EdgeInsets.zero,
           content: Container(
             width: 250,
-            height: 250,
+            height: 300,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -266,11 +269,8 @@ class _AlarmPageState extends State<AlarmPage> {
   String _formatTime(TimeOfDay time) {
     final now = DateTime.now();
     final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
-    final format = DateFormat('a h:mm'); // AM/PMの形式
-    return format
-        .format(dt)
-        .replaceFirst(' ', ' ')
-        .toUpperCase(); // AM/PM表記のカスタマイズ
+    final format = DateFormat.jm(); // AM/PMの形式
+    return format.format(dt).toUpperCase(); // AM/PM表記のカスタマイズ
   }
 }
 

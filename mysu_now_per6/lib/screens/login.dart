@@ -113,21 +113,21 @@ class _LoginState extends State<Login> {
                   labelText: "メールアドレス",
                   hintText: "例: user@example.com",
                   prefixIcon: Icon(Icons.email), // アイコンを追加
-                  fillColor: Colors.lightBlue[50],
+                  fillColor: Colors.orange[50],
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(40.0), // 角丸にする
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderSide:
-                        BorderSide(color: Colors.blue, width: 2.0), //フォーカス時の色
+                        BorderSide(color: Colors.orange, width: 2.0), //フォーカス時の色
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderSide:
                         BorderSide(color: Colors.grey, width: 1.0), //通常時の色と幅
                   ),
                   labelStyle: TextStyle(
-                    color: Colors.blue,
+                    color: Colors.orange,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -143,19 +143,19 @@ class _LoginState extends State<Login> {
                   labelText: "パスワード（6～20文字）",
                   hintText: "パスワードを入力してください",
                   prefixIcon: Icon(Icons.lock),
-                  fillColor: Colors.lightBlue[50],
+                  fillColor: Colors.orange[50],
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue, width: 2.0),
+                    borderSide: BorderSide(color: Colors.orange, width: 2.0),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Colors.grey, width: 1.0),
                   ),
                   labelStyle: TextStyle(
-                    color: Colors.blue,
+                    color: Colors.orange,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -190,7 +190,7 @@ class _LoginState extends State<Login> {
                       fontSize: 18,
                     )),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue, //ボタンの背景色
+                  backgroundColor: Colors.orange, //ボタンの背景色
                   foregroundColor: Colors.white, //テキスト色
                   shape: RoundedRectangleBorder(
                     //shape:ボタンの形状,RoundedRectangleBorder:角が丸い四角形に設定します。
@@ -220,8 +220,8 @@ class _LoginState extends State<Login> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[50],
-                  foregroundColor: Colors.blue,
+                  backgroundColor: Colors.orange[50],
+                  foregroundColor: Colors.orange,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -232,6 +232,7 @@ class _LoginState extends State<Login> {
                       fullscreenDialog: true,
                       builder: (BuildContext context) => Registration(
                           camera: widget.camera,
+                          
                           userId: _auth.currentUser?.uid ?? ""),
                     ),
                   );

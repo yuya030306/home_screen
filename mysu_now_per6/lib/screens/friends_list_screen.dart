@@ -57,6 +57,7 @@ class FriendsListScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('フレンド一覧'),
+        backgroundColor: Colors.orange,
       ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: _firestore.collection('users').doc(userId).snapshots(),
@@ -91,6 +92,10 @@ class FriendsListScreen extends StatelessWidget {
                   return ListTile(
                     leading: CircleAvatar(
                       backgroundColor: Color(int.parse('0x$avatarColor')),
+                      child: Text(
+                        username[0].toUpperCase(),
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                     title: Text(
                       username,
@@ -130,7 +135,7 @@ class FriendsListScreen extends StatelessWidget {
                       fontSize: 20.0),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue, // 修正点：backgroundColor を使用
+                  backgroundColor: Colors.orange, // 修正点：backgroundColor を使用
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),

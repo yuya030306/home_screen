@@ -1,27 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class PendingRequestsScreen extends StatelessWidget {
+class PendingRequestsScreen extends StatefulWidget {
   final String userId;
 
   PendingRequestsScreen({required this.userId});
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  @override
+  _PendingRequestsScreenState createState() => _PendingRequestsScreenState();
+}
 
-  Future<void> _acceptRequest(String requestId, String fromId) async {
+class _PendingRequestsScreenState extends State<PendingRequestsScreen> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  int pendingRequestsCount = 0;
+
+  Future<void> _acceptRequest(String requestId, String fromUserId) async {
     await _firestore.collection('friend_requests').doc(requestId).update({
       'status': 'accepted',
     });
-    await _firestore.collection('users').doc(userId).update({
-      'friends': FieldValue.arrayUnion([fromId]),
+
+    await _firestore.collection('users').doc(widget.userId).update({
+      'friends': FieldValue.arrayUnion([fromUserId]),
     });
-    await _firestore.collection('users').doc(fromId).update({
-      'friends': FieldValue.arrayUnion([userId]),
+
+    await _firestore.collection('users').doc(fromUserId).update({
+      'friends': FieldValue.arrayUnion([widget.userId]),
     });
+
+    await _getPendingRequestsCount();
   }
 
   Future<void> _rejectRequest(String requestId) async {
-    await _firestore.collection('friend_requests').doc(requestId).delete();
+    await _firestore.collection('friend_requests').doc(requestId).update({
+      'status': 'rejected',
+    });
+
+    await _getPendingRequestsCount();
+  }
+
+  Future<void> _getPendingRequestsCount() async {
+    QuerySnapshot query = await _firestore
+        .collection('friend_requests')
+        .where('to', isEqualTo: widget.userId)
+        .where('status', isEqualTo: 'pending')
+        .get();
+
+    setState(() {
+      pendingRequestsCount = query.docs.length;
+    });
   }
 
   Future<Map<String, dynamic>> _getUserInfo(String userId) async {
@@ -31,10 +57,17 @@ class PendingRequestsScreen extends StatelessWidget {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _getPendingRequestsCount();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('フレンド承認待ち'),
+        backgroundColor: Colors.orange,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
@@ -45,7 +78,7 @@ class PendingRequestsScreen extends StatelessWidget {
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestore
             .collection('friend_requests')
-            .where('to', isEqualTo: userId)
+            .where('to', isEqualTo: widget.userId)
             .where('status', isEqualTo: 'pending')
             .snapshots(),
         builder: (context, snapshot) {
@@ -59,11 +92,11 @@ class PendingRequestsScreen extends StatelessWidget {
             itemCount: requests.length,
             itemBuilder: (context, index) {
               final request = requests[index];
-              final fromId = request['from'];
+              final fromUserId = request['from'];
               final requestId = request.id;
 
               return FutureBuilder<Map<String, dynamic>>(
-                future: _getUserInfo(fromId),
+                future: _getUserInfo(fromUserId),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return ListTile(
@@ -75,7 +108,11 @@ class PendingRequestsScreen extends StatelessWidget {
                   final avatarColor = userInfo['avatarColor'];
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: Color(int.parse('0x$avatarColor')),
+                      backgroundColor: Color(int.parse(avatarColor, radix: 16)),
+                      child: Text(
+                        username[0].toUpperCase(),
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                     title: Text(username),
                     trailing: Row(
@@ -83,7 +120,8 @@ class PendingRequestsScreen extends StatelessWidget {
                       children: [
                         IconButton(
                           icon: Icon(Icons.check),
-                          onPressed: () => _acceptRequest(requestId, fromId),
+                          onPressed: () =>
+                              _acceptRequest(requestId, fromUserId),
                         ),
                         IconButton(
                           icon: Icon(Icons.close),

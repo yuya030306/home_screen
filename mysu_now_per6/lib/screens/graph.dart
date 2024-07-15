@@ -8,7 +8,8 @@ class GraphScreen extends StatefulWidget {
   final CameraDescription camera;
   final String userId;
 
-  GraphScreen({required this.selectedGoal, required this.camera, required this.userId});
+  GraphScreen(
+      {required this.selectedGoal, required this.camera, required this.userId});
 
   @override
   _GraphScreenState createState() => _GraphScreenState();
@@ -22,6 +23,7 @@ class _GraphScreenState extends State<GraphScreen> {
   List<String> _goals = [];
   String _selectedGoal = '';
   DateTime _currentMonth = DateTime.now();
+  DateTime _currentWeek = DateTime.now();
 
   @override
   void initState() {
@@ -32,8 +34,9 @@ class _GraphScreenState extends State<GraphScreen> {
 
   Future<void> _fetchGoals() async {
     final firestore = FirebaseFirestore.instance;
-    final goalsSnapshot = await firestore.collection('goals').get();
-    List<String> goals = goalsSnapshot.docs.map((doc) => doc.id).toList();
+    final goalsSnapshot = await firestore.collection('presetGoals').get();
+    List<String> goals =
+        goalsSnapshot.docs.map((doc) => doc['goal'] as String).toList();
 
     setState(() {
       _goals = goals;
@@ -54,11 +57,16 @@ class _GraphScreenState extends State<GraphScreen> {
 
   Future<void> _fetchGoalUnit() async {
     final firestore = FirebaseFirestore.instance;
-    final goalDoc =
-    await firestore.collection('goals').doc(_selectedGoal).get();
+    final goalDoc = await firestore
+        .collection('presetGoals')
+        .where('goal', isEqualTo: _selectedGoal)
+        .limit(1)
+        .get();
 
     setState(() {
-      _goalUnit = goalDoc.data()?['unit'] ?? '';
+      if (goalDoc.docs.isNotEmpty) {
+        _goalUnit = goalDoc.docs.first['unit'] ?? '';
+      }
     });
   }
 
@@ -77,8 +85,7 @@ class _GraphScreenState extends State<GraphScreen> {
       );
     }).toList();
 
-    DateTime now = DateTime.now();
-    DateTime startDate = now.subtract(Duration(days: 6));
+    DateTime startDate = _currentWeek.subtract(Duration(days: 6));
 
     Map<String, double> weeklyDataMap = Map.fromIterable(
       List.generate(7, (index) => startDate.add(Duration(days: index))),
@@ -115,13 +122,13 @@ class _GraphScreenState extends State<GraphScreen> {
     }).toList();
 
     DateTime firstDayOfMonth =
-    DateTime(_currentMonth.year, _currentMonth.month, 1);
+        DateTime(_currentMonth.year, _currentMonth.month, 1);
     DateTime lastDayOfMonth =
-    DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
+        DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
 
     Map<String, double> monthlyDataMap = Map.fromIterable(
       List.generate(lastDayOfMonth.day,
-              (index) => firstDayOfMonth.add(Duration(days: index))),
+          (index) => firstDayOfMonth.add(Duration(days: index))),
       key: (date) => date.toString().split(' ')[0],
       value: (date) => 0.0,
     );
@@ -157,75 +164,161 @@ class _GraphScreenState extends State<GraphScreen> {
     }
   }
 
+  void _previousWeek() {
+    setState(() {
+      _currentWeek = _currentWeek.subtract(Duration(days: 7));
+      _fetchWeeklyData();
+    });
+  }
+
+  void _nextWeek() {
+    if (_currentWeek.isBefore(DateTime.now().subtract(Duration(days: 7)))) {
+      setState(() {
+        _currentWeek = _currentWeek.add(Duration(days: 7));
+        _fetchWeeklyData();
+      });
+    }
+  }
+
+  String _getWeeklyDateRange() {
+    DateTime startDate = _currentWeek.subtract(Duration(days: 6));
+    DateTime endDate = _currentWeek;
+    return '${startDate.year}/${startDate.month}/${startDate.day} ～ ${endDate.year}/${endDate.month}/${endDate.day}';
+  }
+
+  String _getMonthlyTitle() {
+    return '${_currentMonth.year}年${_currentMonth.month}月';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('グラフ'),
-        automaticallyImplyLeading: false, // 戻るボタンを非表示にする
+        backgroundColor: Colors.orange,
       ),
-      body: Column(
-        children: [
-          DropdownButton<String>(
-            value: _selectedPeriod,
-            onChanged: (String? newValue) {
-              setState(() {
-                if (newValue != null) {
-                  _selectedPeriod = newValue;
-                }
-              });
-            },
-            items: ['週', '月'].map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: DropdownButton<String>(
-              isExpanded: true,
-              value: _selectedGoal,
-              onChanged: (String? newValue) {
-                if (newValue != null && _goals.contains(newValue)) {
-                  setState(() {
-                    _selectedGoal = newValue;
-                    _updateGoalData();
-                  });
-                }
-              },
-              items: _goals.map<DropdownMenuItem<String>>((String goal) {
-                return DropdownMenuItem<String>(
-                  value: goal,
-                  child: Text(goal),
-                );
-              }).toList(),
-            ),
-          ),
-          if (_selectedPeriod == '月') ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.arrow_back),
-                  onPressed: _previousMonth,
+      body: CustomPaint(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildPeriodButton('週'),
+                  SizedBox(width: 10),
+                  _buildPeriodButton('月'),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: DropdownButton<String>(
+                        isExpanded: true,
+                        value: _selectedGoal,
+                        onChanged: (String? newValue) {
+                          if (newValue != null && _goals.contains(newValue)) {
+                            setState(() {
+                              _selectedGoal = newValue;
+                              _updateGoalData();
+                            });
+                          }
+                        },
+                        items:
+                            _goals.map<DropdownMenuItem<String>>((String goal) {
+                          return DropdownMenuItem<String>(
+                            value: goal,
+                            child: Text(goal),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
                 ),
-                Text('${_currentMonth.year}年${_currentMonth.month}月'),
-                IconButton(
-                  icon: Icon(Icons.arrow_forward),
-                  onPressed: _nextMonth,
+              ),
+              if (_selectedPeriod == '週') ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: _previousWeek,
+                        child: Text('<',
+                            style:
+                                TextStyle(color: Colors.orange, fontSize: 32)),
+                      ),
+                      Text(_getWeeklyDateRange(),
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                      TextButton(
+                        onPressed: _nextWeek,
+                        child: Text('>',
+                            style:
+                                TextStyle(color: Colors.orange, fontSize: 32)),
+                      ),
+                    ],
+                  ),
                 ),
               ],
-            ),
-          ],
-          Expanded(
-            child: _selectedPeriod == '週'
-                ? _buildWeeklyChart()
-                : _buildMonthlyChart(),
+              if (_selectedPeriod == '月') ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: _previousMonth,
+                        child: Text('<',
+                            style:
+                                TextStyle(color: Colors.orange, fontSize: 32)),
+                      ),
+                      Text(_getMonthlyTitle(),
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                      TextButton(
+                        onPressed: _nextMonth,
+                        child: Text('>',
+                            style:
+                                TextStyle(color: Colors.orange, fontSize: 32)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              Expanded(
+                child: _selectedPeriod == '週'
+                    ? _buildWeeklyChart()
+                    : _buildMonthlyChart(),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildPeriodButton(String period) {
+    bool isSelected = _selectedPeriod == period;
+    return ElevatedButton(
+      onPressed: () {
+        setState(() {
+          _selectedPeriod = period;
+          _updateGoalData();
+        });
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isSelected ? Colors.orange : Colors.grey.shade200,
+        textStyle: TextStyle(fontSize: 20),
+        padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+      child: Center(child: Text(period, style: TextStyle(color: Colors.white))),
     );
   }
 
@@ -238,18 +331,18 @@ class _GraphScreenState extends State<GraphScreen> {
         minimum: 0,
         maximum: _weeklyData.isNotEmpty
             ? _weeklyData.map((e) => e.value).reduce((a, b) => a > b ? a : b) +
-            10
+                10
             : 10,
         title: AxisTitle(text: _goalUnit),
         labelFormat: '{value}$_goalUnit',
       ),
-      title: ChartTitle(text: '直近一週間のデータ'),
       series: <ChartSeries>[
         LineSeries<_RecordData, String>(
           dataSource: _weeklyData,
           xValueMapper: (_RecordData data, _) =>
-          data.date.split('-').last + '日',
+              data.date.split('-').last + '日',
           yValueMapper: (_RecordData data, _) => data.value,
+          color: Colors.orange,
         ),
       ],
     );
@@ -264,18 +357,18 @@ class _GraphScreenState extends State<GraphScreen> {
         minimum: 0,
         maximum: _monthlyData.isNotEmpty
             ? _monthlyData.map((e) => e.value).reduce((a, b) => a > b ? a : b) +
-            10
+                10
             : 10,
         title: AxisTitle(text: _goalUnit),
         labelFormat: '{value}$_goalUnit',
       ),
-      title: ChartTitle(text: '${_currentMonth.month}月のデータ'),
       series: <ChartSeries>[
         LineSeries<_RecordData, String>(
           dataSource: _monthlyData,
           xValueMapper: (_RecordData data, _) =>
-          data.date.split('-').last + '日',
+              data.date.split('-').last + '日',
           yValueMapper: (_RecordData data, _) => data.value,
+          color: Colors.orange,
         ),
       ],
     );

@@ -7,6 +7,7 @@ import 'package:camera/camera.dart';
 
 class AlarmPage extends StatefulWidget {
   static final GlobalKey<NavigatorState> navigatorKey =
+
   GlobalKey<NavigatorState>();
 
   final CameraDescription camera;

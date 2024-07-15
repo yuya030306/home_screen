@@ -69,7 +69,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Widget build(BuildContext context) {
     final imagesForSelectedDay = _getImagesForDay(_selectedDay);
     return Scaffold(
-      appBar: AppBar(title: Text('Calendar')),
+      appBar: AppBar(
+        title: Text('Calendar'),
+        automaticallyImplyLeading: false, // 戻るボタンを非表示にする
+      ),
       backgroundColor: Color.fromARGB(255, 255, 255, 255),
       body: Column(
         children: [

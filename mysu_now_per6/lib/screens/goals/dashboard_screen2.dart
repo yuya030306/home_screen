@@ -2,24 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:camera/camera.dart'; // カメラパッケージのインポート
 import 'goal_card.dart';
-import 'add_goal_from_preset_screen.dart';  // 新しい画面のインポート
 
-class DashboardScreen extends StatefulWidget {
+class DashboardScreen2 extends StatefulWidget {
   final CameraDescription camera; // カメラ情報を追加
   final String userId; // ユーザーIDを追加
 
-  DashboardScreen({required this.camera, required this.userId}); // コンストラクタを更新
+  DashboardScreen2({required this.camera, required this.userId}); // コンストラクタを更新
 
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen2> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('目標管理'),
+        title: Text('達成した目標を選択'),
       ),
       body: Column(
         children: [
@@ -52,15 +51,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 );
               },
             ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => AddGoalFromPresetScreen()),
-              ).then((_) => setState(() {})); // AddGoalFromPresetScreenから戻った際に画面を更新
-            },
-            child: Text('目標を追加する'),
           ),
         ],
       ),

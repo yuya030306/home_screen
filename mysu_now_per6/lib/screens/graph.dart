@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:camera/camera.dart';
 
 class GraphScreen extends StatefulWidget {
   final String selectedGoal;
+  final CameraDescription camera;
+  final String userId;
 
-  GraphScreen({required this.selectedGoal});
+  GraphScreen({required this.selectedGoal, required this.camera, required this.userId});
 
   @override
   _GraphScreenState createState() => _GraphScreenState();
@@ -159,6 +162,7 @@ class _GraphScreenState extends State<GraphScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('グラフ'),
+        automaticallyImplyLeading: false, // 戻るボタンを非表示にする
       ),
       body: Column(
         children: [

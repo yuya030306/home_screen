@@ -17,6 +17,7 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('設定'),
+        automaticallyImplyLeading: false, // 戻るボタンを非表示にする
         backgroundColor: Colors.orange,
       ),
       body: CustomPaint(

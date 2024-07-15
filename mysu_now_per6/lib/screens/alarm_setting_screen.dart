@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'alarm_manager.dart';
-import 'goals/goal_screen.dart';
+import 'goals/dashboard_screen.dart';
+import 'package:camera/camera.dart';
 
 class AlarmPage extends StatefulWidget {
-  static final GlobalKey<NavigatorState> navigatorKey =
-      GlobalKey<NavigatorState>();
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  final CameraDescription camera;
+  final String userId;
+
+  AlarmPage({required this.camera, required this.userId});
 
   @override
   _AlarmPageState createState() => _AlarmPageState();
@@ -86,7 +90,7 @@ class _AlarmPageState extends State<AlarmPage> {
                     alarmManager.stopAlarm();
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => GoalScreen()),
+                      MaterialPageRoute(builder: (context) => DashboardScreen(camera: widget.camera, userId: widget.userId)),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -129,7 +133,7 @@ class _AlarmPageState extends State<AlarmPage> {
           contentPadding: EdgeInsets.zero,
           content: Container(
             width: 250,
-            height: 300,
+            height: 250,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

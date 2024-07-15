@@ -18,6 +18,7 @@ import 'screens/record_goals.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:android_intent_plus/flag.dart';
+import 'screens/goals/dashboard_screen2.dart';
 
 // グローバル変数として定義
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -67,7 +68,7 @@ class MyApp extends StatelessWidget {
         theme: ThemeData.light(),
         home: Login(camera: camera),
         routes: {
-          '/alarm': (context) => AlarmPage(),
+          '/alarm': (context) => AlarmPage(camera: camera, userId: 'user_id'),
           '/home': (context) => HomeScreen(camera: camera, userId: 'user_id'),
           '/login': (context) => Login(camera: camera),
         },
@@ -135,13 +136,18 @@ Future<void> initializeNotifications() async {
       ?.createNotificationChannel(channel);
 }
 
-void onDidReceiveNotificationResponse(NotificationResponse response) {
+void onDidReceiveNotificationResponse(NotificationResponse response) async {
   // 通知を選択した際の処理
   if (response.payload != null) {
-    navigatorKey.currentState?.push(
-      MaterialPageRoute(
-        builder: (context) => RecordGoalsScreen(camera: camera, userId: 'user_id'),
-      ),
-    );
+    String goalId = response.payload!; // ペイロードからgoalIdを取得
+    DocumentSnapshot goalSnapshot = await FirebaseFirestore.instance.collection('goals').doc(goalId).get();
+
+    if (goalSnapshot.exists) {
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (context) => DashboardScreen2(camera: camera, userId: 'user_id'),
+        ),
+      );
+    }
   }
 }

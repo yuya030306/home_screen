@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'camera_screen.dart'; // カメラ画面のインポートを追加
 import 'package:camera/camera.dart'; // カメラパッケージのインポート
+import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authenticationのインポート
 
 class RecordGoalsScreen extends StatefulWidget {
   final CameraDescription camera;
@@ -18,15 +19,18 @@ class RecordGoalsScreen extends StatefulWidget {
 class _RecordGoalsScreenState extends State<RecordGoalsScreen> {
   final TextEditingController _valueController = TextEditingController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<void> _saveRecord() async {
     String value = _valueController.text;
+    User? user = _auth.currentUser; // 現在のユーザを取得
 
-    if (value.isNotEmpty) {
+    if (value.isNotEmpty && user != null) {
       await _firestore.collection('records').add({
         'goal': widget.goal['goal'], // 事前に設定された目標の内容
         'value': value,
         'timestamp': Timestamp.now(),
+        'userId': user.uid, // 現在のユーザのIdを追加
       });
 
       // 目標を削除

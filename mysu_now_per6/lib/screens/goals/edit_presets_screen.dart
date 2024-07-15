@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';  // FirebaseAuthのインポート
 
 class EditPresetsScreen extends StatefulWidget {
   @override
@@ -10,11 +11,13 @@ class _EditPresetsScreenState extends State<EditPresetsScreen> {
   final TextEditingController _goalController = TextEditingController();
   final TextEditingController _unitController = TextEditingController();
 
-  void _addPreset() {
-    if (_goalController.text.isNotEmpty && _unitController.text.isNotEmpty) {
+  void _addPreset() async {
+    final User? user = FirebaseAuth.instance.currentUser;  // 現在のユーザを取得
+    if (_goalController.text.isNotEmpty && _unitController.text.isNotEmpty && user != null) {
       FirebaseFirestore.instance.collection('presetGoals').add({
         'goal': _goalController.text,
         'unit': _unitController.text,
+        'userId': user.uid,  // ユーザIDを追加
       });
       _goalController.clear();
       _unitController.clear();
@@ -60,7 +63,7 @@ class _EditPresetsScreenState extends State<EditPresetsScreen> {
                         leading: Icon(Icons.edit, color: Colors.blue),
                         title: TextFormField(
                           initialValue: presets[index]['goal'] ?? '',
-                          decoration: InputDecoration(labelText: '単位'),
+                          decoration: InputDecoration(labelText: '目標'),
                           onChanged: (value) {
                             _updatePreset(presets[index]['id']!, 'goal', value);  // String? -> String
                           },

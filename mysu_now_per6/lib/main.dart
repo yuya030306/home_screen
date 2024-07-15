@@ -136,18 +136,13 @@ Future<void> initializeNotifications() async {
       ?.createNotificationChannel(channel);
 }
 
-void onDidReceiveNotificationResponse(NotificationResponse response) async {
+void onDidReceiveNotificationResponse(NotificationResponse response) {
   // 通知を選択した際の処理
   if (response.payload != null) {
-    String goalId = response.payload!; // ペイロードからgoalIdを取得
-    DocumentSnapshot goalSnapshot = await FirebaseFirestore.instance.collection('goals').doc(goalId).get();
-
-    if (goalSnapshot.exists) {
-      navigatorKey.currentState?.push(
-        MaterialPageRoute(
-          builder: (context) => DashboardScreen2(camera: camera, userId: 'user_id'),
-        ),
-      );
-    }
+    navigatorKey.currentState?.push(
+      MaterialPageRoute(
+        builder: (context) => DashboardScreen2(camera: camera, userId: 'user_id'),
+      ),
+    );
   }
 }

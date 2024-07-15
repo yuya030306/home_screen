@@ -21,10 +21,10 @@ class FullScreenImageScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Center(
-        child: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Image.network(imageUrl),
+      body: GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: Center(
+          child: Image.network(imageUrl, fit: BoxFit.contain),
         ),
       ),
     );
@@ -71,155 +71,159 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Calendar'),
-        automaticallyImplyLeading: false, // 戻るボタンを非表示にする
+        automaticallyImplyLeading: false,
       ),
       backgroundColor: Color.fromARGB(255, 255, 255, 255),
       body: Column(
         children: [
-          TableCalendar(
-            focusedDay: _selectedDay,
-            firstDay: DateTime(2000),
-            lastDay: DateTime(2100),
-            calendarFormat: _calendarFormat,
-            onFormatChanged: _onFormatChanged,
-            selectedDayPredicate: (day) => isSameDay(day, _selectedDay),
-            onDaySelected: (selectedDay, focusedDay) {
-              setState(() {
-                if (_selectedDay != selectedDay) {
-                  _selectedDay = selectedDay;
-                  _currentImageIndex = 0;
-                }
-              });
-            },
-            headerStyle: HeaderStyle(
-              formatButtonTextStyle: const TextStyle(color: Color.fromARGB(255, 0, 15, 100)),
-              formatButtonDecoration: BoxDecoration(
-                color: Color.fromARGB(255, 247, 178, 30),
-                borderRadius: BorderRadius.circular(16.0),
-              ),
-              formatButtonVisible: true,
-              titleCentered: true,
-              formatButtonShowsNext: false,
-              titleTextFormatter: (date, _) {
-                String M = '';
-                if (_calendarFormat == CalendarFormat.month) {
-                  M = date.month.toString() + '月';
-                } else if (_calendarFormat == CalendarFormat.twoWeeks) {
-                  M = date.month.toString() + '月' + ' 2週';
-                } else if (_calendarFormat == CalendarFormat.week) {
-                  M = date.month.toString() + '月' + ' 週次';
-                }
-                return M;
+          Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height * 0.5,
+            child: TableCalendar(
+              focusedDay: _selectedDay,
+              firstDay: DateTime(2000),
+              lastDay: DateTime(2100),
+              calendarFormat: _calendarFormat,
+              onFormatChanged: _onFormatChanged,
+              selectedDayPredicate: (day) => isSameDay(day, _selectedDay),
+              onDaySelected: (selectedDay, focusedDay) {
+                setState(() {
+                  if (_selectedDay != selectedDay) {
+                    _selectedDay = selectedDay;
+                    _currentImageIndex = 0;
+                  }
+                });
               },
-              titleTextStyle: TextStyle(
-                color: Colors.black,
-                fontSize: 20.0,
-                fontWeight: FontWeight.bold,
+              headerStyle: HeaderStyle(
+                formatButtonTextStyle: const TextStyle(color: Color.fromARGB(255, 0, 15, 100)),
+                formatButtonDecoration: BoxDecoration(
+                  color: Color.fromARGB(255, 247, 178, 30),
+                  borderRadius: BorderRadius.circular(16.0),
+                ),
+                formatButtonVisible: true,
+                titleCentered: true,
+                formatButtonShowsNext: false,
+                titleTextFormatter: (date, _) {
+                  String M = '';
+                  if (_calendarFormat == CalendarFormat.month) {
+                    M = date.month.toString() + '月';
+                  } else if (_calendarFormat == CalendarFormat.twoWeeks) {
+                    M = date.month.toString() + '月' + ' 2週';
+                  } else if (_calendarFormat == CalendarFormat.week) {
+                    M = date.month.toString() + '月' + ' 週次';
+                  }
+                  return M;
+                },
+                titleTextStyle: TextStyle(
+                  color: Colors.black,
+                  fontSize: 20.0,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            daysOfWeekStyle: DaysOfWeekStyle(
-              dowTextFormatter: (date, locale) {
-                switch (date.weekday) {
-                  case DateTime.sunday:
-                    return '日';
-                  case DateTime.monday:
-                    return '月';
-                  case DateTime.tuesday:
-                    return '火';
-                  case DateTime.wednesday:
-                    return '水';
-                  case DateTime.thursday:
-                    return '木';
-                  case DateTime.friday:
-                    return '金';
-                  case DateTime.saturday:
-                    return '土';
-                  default:
-                    return '';
-                }
-              },
-              weekendStyle: TextStyle().copyWith(color: Color.fromARGB(255, 226, 147, 0)),
-            ),
-            calendarStyle: CalendarStyle(
-              todayDecoration: BoxDecoration(
-                color: Color.fromARGB(255, 224, 132, 70),
-                shape: BoxShape.circle,
+              daysOfWeekStyle: DaysOfWeekStyle(
+                dowTextFormatter: (date, locale) {
+                  switch (date.weekday) {
+                    case DateTime.sunday:
+                      return '日';
+                    case DateTime.monday:
+                      return '月';
+                    case DateTime.tuesday:
+                      return '火';
+                    case DateTime.wednesday:
+                      return '水';
+                    case DateTime.thursday:
+                      return '木';
+                    case DateTime.friday:
+                      return '金';
+                    case DateTime.saturday:
+                      return '土';
+                    default:
+                      return '';
+                  }
+                },
+                weekendStyle: TextStyle().copyWith(color: Color.fromARGB(255, 226, 147, 0)),
               ),
-              defaultTextStyle: TextStyle(color: Colors.black),
-            ),
-            calendarBuilders: CalendarBuilders(
-              defaultBuilder: (context, day, focusedDay) {
-                final imagesForDay = _getImagesForDay(day);
-                if (imagesForDay.isNotEmpty) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: NetworkImage(imagesForDay.first['url']!),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        day.day.toString(),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          backgroundColor: Colors.black54,
+              calendarStyle: CalendarStyle(
+                todayDecoration: BoxDecoration(
+                  color: Color.fromARGB(255, 224, 132, 70),
+                  shape: BoxShape.circle,
+                ),
+                defaultTextStyle: TextStyle(color: Colors.black),
+              ),
+              calendarBuilders: CalendarBuilders(
+                defaultBuilder: (context, day, focusedDay) {
+                  final imagesForDay = _getImagesForDay(day);
+                  if (imagesForDay.isNotEmpty) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: NetworkImage(imagesForDay.first['url']!),
+                          fit: BoxFit.cover,
                         ),
                       ),
-                    ),
-                  );
-                } else {
-                  return Center(child: Text(day.day.toString()));
-                }
-              },
-              selectedBuilder: (context, day, focusedDay) {
-                final imagesForDay = _getImagesForDay(day);
-                if (imagesForDay.isNotEmpty) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: NetworkImage(imagesForDay.first['url']!),
-                        fit: BoxFit.cover,
-                      ),
-                      border: Border.all(
-                        color: Colors.black,
-                        width: 2.0,
-                      ),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        day.day.toString(),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          backgroundColor: Colors.black54,
+                      child: Center(
+                        child: Text(
+                          day.day.toString(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            backgroundColor: Colors.black54,
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                } else {
-                  return Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.black,
-                        width: 2.0,
-                      ),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        day.day.toString(),
-                        style: TextStyle(
+                    );
+                  } else {
+                    return Center(child: Text(day.day.toString()));
+                  }
+                },
+                selectedBuilder: (context, day, focusedDay) {
+                  final imagesForDay = _getImagesForDay(day);
+                  if (imagesForDay.isNotEmpty) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: NetworkImage(imagesForDay.first['url']!),
+                          fit: BoxFit.cover,
+                        ),
+                        border: Border.all(
                           color: Colors.black,
-                          fontWeight: FontWeight.bold,
+                          width: 2.0,
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          day.day.toString(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            backgroundColor: Colors.black54,
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                }
-              },
+                    );
+                  } else {
+                    return Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.black,
+                          width: 2.0,
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          day.day.toString(),
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
             ),
           ),
           if (imagesForSelectedDay.isEmpty)
@@ -227,19 +231,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
           else
             Column(
               children: [
-                Container(
-                  width: 200,
-                  height: 200,
-                  child: SingleChildScrollView(
-                      child: Column(children: [
-                        Image.network(
-                          imagesForSelectedDay[_currentImageIndex]['url']!,
-                          fit: BoxFit.cover,
-                        ),
-                      ],)
-
-                  ),
-                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -257,7 +248,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         textStyle: TextStyle(fontSize: 18),
                       ),
                     ),
-                    SizedBox(width: 30),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FullScreenImageScreen(
+                              imageUrl: imagesForSelectedDay[_currentImageIndex]['url']!,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 180,
+                        height: 180,
+                        margin: EdgeInsets.symmetric(horizontal: 10),
+                        child: Image.network(
+                          imagesForSelectedDay[_currentImageIndex]['url']!,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
                     ElevatedButton(
                       onPressed: _currentImageIndex < imagesForSelectedDay.length - 1
                           ? () {

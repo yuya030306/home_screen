@@ -29,11 +29,15 @@ class _RecordGoalsScreenState extends State<RecordGoalsScreen> {
         'timestamp': Timestamp.now(),
       });
 
+      // 目標を削除
+      await _firestore.collection('goals').doc(widget.goal.id).delete();
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Record saved successfully!')),
+        SnackBar(content: Text('Record saved and goal deleted successfully!')),
       );
 
       _valueController.clear();
+      Navigator.of(context).pop(); // 達成入力後に前の画面に戻る
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please fill out all fields')),

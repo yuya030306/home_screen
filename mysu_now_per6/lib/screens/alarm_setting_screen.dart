@@ -7,7 +7,8 @@ import 'package:camera/camera.dart';
 
 class AlarmPage extends StatefulWidget {
   static final GlobalKey<NavigatorState> navigatorKey =
-      GlobalKey<NavigatorState>();
+
+  GlobalKey<NavigatorState>();
 
   final CameraDescription camera;
   final String userId;
@@ -88,7 +89,7 @@ class _AlarmPageState extends State<AlarmPage> {
                 ElevatedButton(
                   onPressed: () {
                     final alarmManager =
-                        Provider.of<AlarmManager>(context, listen: false);
+                    Provider.of<AlarmManager>(context, listen: false);
                     alarmManager.stopAlarm();
                     Navigator.push(
                       context,
@@ -120,14 +121,15 @@ class _AlarmPageState extends State<AlarmPage> {
     final alarmManager = Provider.of<AlarmManager>(context, listen: false);
     TimeOfDay initialTime = _selectedTime ?? TimeOfDay(hour: 0, minute: 0);
     if (alarmManager.alarmTimeString != null) {
-      final alarmTime = DateFormat.jm().parse(alarmManager.alarmTimeString!);
+      final alarmTime =
+      DateFormat.jm().parse(alarmManager.alarmTimeString!);
       initialTime = TimeOfDay(hour: alarmTime.hour, minute: alarmTime.minute);
     }
 
     final hourController =
-        FixedExtentScrollController(initialItem: initialTime.hour);
+    FixedExtentScrollController(initialItem: initialTime.hour);
     final minuteController =
-        FixedExtentScrollController(initialItem: initialTime.minute);
+    FixedExtentScrollController(initialItem: initialTime.minute);
 
     showDialog(
       context: context,
@@ -243,7 +245,7 @@ class _AlarmPageState extends State<AlarmPage> {
                 ElevatedButton(
                   onPressed: () {
                     final alarmManager =
-                        Provider.of<AlarmManager>(context, listen: false);
+                    Provider.of<AlarmManager>(context, listen: false);
                     alarmManager.setAlarm(
                         _selectedHour, _selectedMinute, _alarmTimeString!);
                     Navigator.of(context).pop();

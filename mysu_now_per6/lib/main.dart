@@ -141,7 +141,7 @@ void onDidReceiveNotificationResponse(NotificationResponse response) {
   if (response.payload != null) {
     navigatorKey.currentState?.push(
       MaterialPageRoute(
-        builder: (context) => DashboardScreen2(camera: camera, userId: 'user_id'),
+        builder: (context) => DashboardScreen2(camera: camera),
       ),
     );
   }

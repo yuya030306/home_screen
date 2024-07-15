@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'set_goal_value_screen.dart';
 import 'edit_presets_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';  // FirebaseAuthのインポート
 
 class AddGoalFromPresetScreen extends StatefulWidget {
   @override
@@ -9,8 +10,19 @@ class AddGoalFromPresetScreen extends StatefulWidget {
 }
 
 class _AddGoalFromPresetScreenState extends State<AddGoalFromPresetScreen> {
+  final User? user = FirebaseAuth.instance.currentUser;  // 現在のユーザを取得
+
   @override
   Widget build(BuildContext context) {
+    if (user == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('目標を追加'),
+        ),
+        body: Center(child: Text('ユーザーが認証されていません')),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('目標を追加'),
@@ -18,8 +30,11 @@ class _AddGoalFromPresetScreenState extends State<AddGoalFromPresetScreen> {
       body: Column(
         children: [
           Expanded(
-            child: StreamBuilder(
-              stream: FirebaseFirestore.instance.collection('presetGoals').snapshots(),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('presetGoals')
+                  .where('userId', isEqualTo: user!.uid)
+                  .snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
                 if (!snapshot.hasData) {
                   return Center(child: CircularProgressIndicator());

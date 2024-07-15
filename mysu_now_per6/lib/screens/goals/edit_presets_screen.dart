@@ -10,14 +10,14 @@ class EditPresetsScreen extends StatefulWidget {
 class _EditPresetsScreenState extends State<EditPresetsScreen> {
   final TextEditingController _goalController = TextEditingController();
   final TextEditingController _unitController = TextEditingController();
+  final User? user = FirebaseAuth.instance.currentUser;  // 現在のユーザを取得
 
   void _addPreset() async {
-    final User? user = FirebaseAuth.instance.currentUser;  // 現在のユーザを取得
     if (_goalController.text.isNotEmpty && _unitController.text.isNotEmpty && user != null) {
       FirebaseFirestore.instance.collection('presetGoals').add({
         'goal': _goalController.text,
         'unit': _unitController.text,
-        'userId': user.uid,  // ユーザIDを追加
+        'userId': user?.uid,  // ユーザIDを追加
       });
       _goalController.clear();
       _unitController.clear();
@@ -36,6 +36,15 @@ class _EditPresetsScreenState extends State<EditPresetsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (user == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('プリセットを編集'),
+        ),
+        body: Center(child: Text('ユーザーが認証されていません')),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('プリセットを編集'),
@@ -43,8 +52,11 @@ class _EditPresetsScreenState extends State<EditPresetsScreen> {
       body: Column(
         children: [
           Expanded(
-            child: StreamBuilder(
-              stream: FirebaseFirestore.instance.collection('presetGoals').snapshots(),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('presetGoals')
+                  .where('userId', isEqualTo: user!.uid)
+                  .snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
                 if (!snapshot.hasData) {
                   return Center(child: CircularProgressIndicator());

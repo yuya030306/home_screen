@@ -7,9 +7,7 @@ import 'package:camera/camera.dart';
 
 class AlarmPage extends StatefulWidget {
   static final GlobalKey<NavigatorState> navigatorKey =
-
-  GlobalKey<NavigatorState>();
-
+      GlobalKey<NavigatorState>();
   final CameraDescription camera;
   final String userId;
 
@@ -24,18 +22,59 @@ class _AlarmPageState extends State<AlarmPage> {
   String? _alarmTimeString;
   int _selectedHour = 0;
   int _selectedMinute = 0;
+  bool _isDialogOpen = false;
 
   @override
   void initState() {
     super.initState();
     _loadInitialTime();
+
+    final alarmManager = Provider.of<AlarmManager>(context, listen: false);
+    alarmManager.addListener(_onAlarmTriggered);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final alarmManager = Provider.of<AlarmManager>(context);
+    if (alarmManager.isAlarmRinging && !_isDialogOpen) {
+      _isDialogOpen = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        showAlarmDialog();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    final alarmManager = Provider.of<AlarmManager>(context, listen: false);
+    alarmManager.removeListener(_onAlarmTriggered);
+    super.dispose();
   }
 
   void _loadInitialTime() {
     final alarmManager = Provider.of<AlarmManager>(context, listen: false);
     setState(() {
       _alarmTimeString = alarmManager.alarmTimeString;
+      if (_alarmTimeString != null) {
+        final alarmTime = DateFormat('a h:mm').parse(_alarmTimeString!);
+        _selectedTime =
+            TimeOfDay(hour: alarmTime.hour, minute: alarmTime.minute);
+        _selectedHour = _selectedTime!.hour;
+        _selectedMinute = _selectedTime!.minute;
+      }
     });
+  }
+
+  void _onAlarmTriggered() {
+    final alarmManager = Provider.of<AlarmManager>(context, listen: false);
+    if (alarmManager.isAlarmRinging && !_isDialogOpen) {
+      _isDialogOpen = true;
+      showAlarmDialog();
+    } else if (!alarmManager.isAlarmRinging && _isDialogOpen) {
+      Navigator.of(context, rootNavigator: true).pop();
+      _isDialogOpen = false;
+    }
   }
 
   @override
@@ -53,19 +92,26 @@ class _AlarmPageState extends State<AlarmPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                Container(
-                  padding: EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.orange.shade200, width: 2),
-                    borderRadius: BorderRadius.circular(10),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: 240, // ボタンの幅に合わせる
                   ),
-                  child: Text(
-                    _alarmTimeString ?? 'アラームをセットしてください',
-                    style: TextStyle(
-                      fontSize: 28,
-                      color: Colors.black54,
-                      fontFamily: 'Digital-7', // デジタル時計風フォント
-                      letterSpacing: 2.0,
+                  child: Container(
+                    padding: EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      border:
+                          Border.all(color: Colors.orange.shade200, width: 2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      _alarmTimeString ?? 'アラームをセットしてください',
+                      style: TextStyle(
+                        fontSize: 24,
+                        color: Colors.black54,
+                        fontFamily: 'Digital-7', // デジタル時計風フォント
+                        letterSpacing: 2.0,
+                      ),
+                      textAlign: TextAlign.center, // テキストを中央揃え
                     ),
                   ),
                 ),
@@ -85,30 +131,6 @@ class _AlarmPageState extends State<AlarmPage> {
                     _alarmTimeString == null ? 'アラームをセット' : 'アラームを編集',
                   ),
                 ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    final alarmManager =
-                    Provider.of<AlarmManager>(context, listen: false);
-                    alarmManager.stopAlarm();
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => DashboardScreen(
-                              camera: widget.camera, userId: widget.userId)),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-                    textStyle: TextStyle(fontSize: 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: Text('アラームを停止'),
-                ),
               ],
             ),
           ),
@@ -122,14 +144,14 @@ class _AlarmPageState extends State<AlarmPage> {
     TimeOfDay initialTime = _selectedTime ?? TimeOfDay(hour: 0, minute: 0);
     if (alarmManager.alarmTimeString != null) {
       final alarmTime =
-      DateFormat.jm().parse(alarmManager.alarmTimeString!);
+          DateFormat('a h:mm').parse(alarmManager.alarmTimeString!);
       initialTime = TimeOfDay(hour: alarmTime.hour, minute: alarmTime.minute);
     }
 
     final hourController =
-    FixedExtentScrollController(initialItem: initialTime.hour);
+        FixedExtentScrollController(initialItem: initialTime.hour);
     final minuteController =
-    FixedExtentScrollController(initialItem: initialTime.minute);
+        FixedExtentScrollController(initialItem: initialTime.minute);
 
     showDialog(
       context: context,
@@ -138,7 +160,7 @@ class _AlarmPageState extends State<AlarmPage> {
           contentPadding: EdgeInsets.zero,
           content: Container(
             width: 250,
-            height: 300,
+            height: 250,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -244,8 +266,13 @@ class _AlarmPageState extends State<AlarmPage> {
                 SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
+                    setState(() {
+                      _selectedTime = TimeOfDay(
+                          hour: _selectedHour, minute: _selectedMinute);
+                      _alarmTimeString = _formatTime(_selectedTime!);
+                    });
                     final alarmManager =
-                    Provider.of<AlarmManager>(context, listen: false);
+                        Provider.of<AlarmManager>(context, listen: false);
                     alarmManager.setAlarm(
                         _selectedHour, _selectedMinute, _alarmTimeString!);
                     Navigator.of(context).pop();
@@ -271,8 +298,51 @@ class _AlarmPageState extends State<AlarmPage> {
   String _formatTime(TimeOfDay time) {
     final now = DateTime.now();
     final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
-    final format = DateFormat.jm(); // AM/PMの形式
-    return format.format(dt).toUpperCase(); // AM/PM表記のカスタマイズ
+    final format = DateFormat('a h:mm'); // AM/PMの形式
+    return format
+        .format(dt)
+        .replaceFirst(' ', ' ')
+        .toUpperCase(); // AM/PM表記のカスタマイズ
+  }
+
+  // アラームが鳴ったときにダイアログを表示するメソッド
+  void showAlarmDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // ダイアログ外をタップしても閉じないようにする
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('アラーム'),
+          content: Text(
+            'おはようございます！\n今日の目標を入力しましょう！',
+            textAlign: TextAlign.center, // テキストを中央に揃える
+          ),
+          actions: <Widget>[
+            ElevatedButton(
+              onPressed: () {
+                final alarmManager =
+                    Provider.of<AlarmManager>(context, listen: false);
+                alarmManager.stopAlarm();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DashboardScreen(
+                      camera: widget.camera,
+                      userId: widget.userId,
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+              ),
+              child: Text('目標を入力'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 

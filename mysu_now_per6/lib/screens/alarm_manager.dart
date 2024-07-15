@@ -9,6 +9,7 @@ class AlarmManager extends ChangeNotifier {
   String? _alarmTimeString;
   Timer? _timer;
   final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isAlarmRinging = false;
 
   AlarmManager() {
     _loadAlarmTime();
@@ -56,12 +57,9 @@ class AlarmManager extends ChangeNotifier {
     _timer?.cancel();
     _timer = Timer(duration, () {
       _playAlarm();
-      _navigateToAlarmPage();
+      _isAlarmRinging = true;
+      notifyListeners();
     });
-  }
-
-  void _navigateToAlarmPage() {
-    AlarmPage.navigatorKey.currentState?.pushReplacementNamed('/alarm');
   }
 
   void _playAlarm() async {
@@ -69,8 +67,10 @@ class AlarmManager extends ChangeNotifier {
     await _audioPlayer.play(AssetSource('alarm_sound.mp3'));
   }
 
-  void _stopAlarm() {
+  void stopAlarm() {
     _audioPlayer.stop();
+    _isAlarmRinging = false;
+    notifyListeners();
   }
 
   @override
@@ -81,14 +81,21 @@ class AlarmManager extends ChangeNotifier {
   }
 
   String? get alarmTimeString => _alarmTimeString;
+  bool get isAlarmRinging => _isAlarmRinging;
 
   void setAlarm(int hour, int minute, String alarmTimeString) {
     _saveAlarmTime(hour, minute, alarmTimeString);
     notifyListeners();
   }
 
-  void stopAlarm() {
-    _stopAlarm();
+  Future<void> resetAlarm() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove('selectedHour');
+    await prefs.remove('selectedMinute');
+    await prefs.remove('alarmTimeString');
+    _selectedTime = null;
+    _alarmTimeString = null;
+    _timer?.cancel();
     notifyListeners();
   }
 }

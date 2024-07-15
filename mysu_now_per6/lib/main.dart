@@ -4,6 +4,7 @@ import 'package:camera/camera.dart';
 import 'package:provider/provider.dart';
 import 'screens/registration.dart';
 import 'screens/home_screen.dart';
+import 'screens/goals/dashboard_screen2.dart';
 import 'screens/login.dart';
 import 'screens/alarm_setting_screen.dart';
 import 'screens/alarm_manager.dart';
@@ -73,7 +74,10 @@ class MyApp extends StatelessWidget {
         theme: ThemeData.light(),
         home: Login(camera: camera),
         routes: {
-          '/alarm': (context) => AlarmPage(),
+          '/alarm': (context) => AlarmPage(
+                camera: camera,
+                userId: 'user_id',
+              ),
           '/home': (context) => HomeScreen(
                 camera: camera,
                 userId: 'user_id',
@@ -153,7 +157,7 @@ void onDidReceiveNotificationResponse(NotificationResponse response) {
   if (response.payload != null) {
     navigatorKey.currentState?.push(
       MaterialPageRoute(
-        builder: (context) => RecordGoalsScreen(
+        builder: (context) => DashboardScreen2(
           camera: camera,
           userId: 'user_id',
         ),

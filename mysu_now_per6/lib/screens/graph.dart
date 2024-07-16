@@ -87,7 +87,6 @@ class _GraphScreenState extends State<GraphScreen> {
       DateTime timestamp = (doc['timestamp'] as Timestamp)
           .toDate()
           .toLocal()
-          .add(Duration(days: 1)); // 1日を追加
       String formattedDate =
           '${timestamp.year}-${timestamp.month}-${timestamp.day}';
       return _RecordData(
@@ -130,7 +129,6 @@ class _GraphScreenState extends State<GraphScreen> {
       DateTime timestamp = (doc['timestamp'] as Timestamp)
           .toDate()
           .toLocal()
-          .add(Duration(days: 1)); // 1日を追加
       String formattedDate =
           '${timestamp.year}-${timestamp.month}-${timestamp.day}';
       return _RecordData(

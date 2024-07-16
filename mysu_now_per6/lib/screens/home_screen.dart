@@ -12,7 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
-import 'goals/dashboard_screen2.dart';
+import 'goals/dashboard_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final CameraDescription camera;
@@ -71,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.lightBlue[50],
-      body: _getScreen(_currentIndex), // 現在のインデックスに基づいて表示する画面を設定
+      body: _getScreen(_currentIndex),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -140,7 +140,7 @@ class HomeContent extends StatelessWidget {
           children: [
             SizedBox(height: 40),
             Text(
-              '', // ここにタイトルを入力
+              '目標管理', // タイトルを追加
               style: TextStyle(fontSize: 30),
             ),
             ElevatedButton.icon(
@@ -238,7 +238,7 @@ class HomeContent extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => DashboardScreen2(
+                          builder: (context) => DashboardScreen(
                               camera: camera, userId: userId)),
                     );
                   },

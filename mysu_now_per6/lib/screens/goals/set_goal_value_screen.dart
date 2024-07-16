@@ -3,8 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:firebase_auth/firebase_auth.dart'; // FirebaseAuthのインポート
-import '../../main.dart'; // flutterLocalNotificationsPluginをインポート
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../main.dart';
+import '../../theme.dart';
 
 class SetGoalValueScreen extends StatefulWidget {
   final String? selectedPreset;
@@ -18,14 +19,13 @@ class SetGoalValueScreen extends StatefulWidget {
 
 class _SetGoalValueScreenState extends State<SetGoalValueScreen> {
   final TextEditingController _valueController = TextEditingController();
-  TimeOfDay? _selectedTime = TimeOfDay.now(); // 初期値を現在の時刻に設定
+  TimeOfDay? _selectedTime = TimeOfDay.now();
 
   void _addGoal() {
     if (widget.selectedPreset != null && widget.selectedUnit != null && _valueController.text.isNotEmpty && _selectedTime != null) {
       final DateTime now = DateTime.now();
       final DateTime deadline = DateTime(now.year, now.month, now.day, _selectedTime!.hour, _selectedTime!.minute);
 
-      // 締切時間が現在時刻より前かどうかをチェック
       if (deadline.isBefore(now)) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('締切時間は現在時刻より後に設定してください')),
@@ -38,9 +38,8 @@ class _SetGoalValueScreenState extends State<SetGoalValueScreen> {
         'unit': widget.selectedUnit,
         'value': _valueController.text,
         'deadline': deadline,
-        'userId': FirebaseAuth.instance.currentUser?.uid,  // ユーザー情報を追加
+        'userId': FirebaseAuth.instance.currentUser?.uid,
       }).then((documentReference) {
-        // 目標が追加された後に通知をスケジュール
         scheduleNotification(documentReference.id, widget.selectedPreset!, deadline);
       });
 
@@ -54,63 +53,66 @@ class _SetGoalValueScreenState extends State<SetGoalValueScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('目標値と締切を設定'),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '目標：${widget.selectedPreset}',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 10),
-              Text(
-                '単位： ${widget.selectedUnit}',
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-              ),
-              SizedBox(height: 20),
-              TextField(
-                controller: _valueController,
-                decoration: InputDecoration(
-                  labelText: '目標値',
-                  border: OutlineInputBorder(),
+    return MaterialApp(
+      theme: appTheme,
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('目標値と締切を設定'),
+        ),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '目標：${widget.selectedPreset}',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                keyboardType: TextInputType.number,
-              ),
-              SizedBox(height: 20),
-              Text(
-                '締切時間',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(
-                height: 200, // 固定の高さを設定してオーバーフローを防ぐ
-                child: CupertinoTimerPicker(
-                  mode: CupertinoTimerPickerMode.hm,
-                  initialTimerDuration: Duration(hours: _selectedTime!.hour, minutes: _selectedTime!.minute),
-                  onTimerDurationChanged: (Duration duration) {
-                    setState(() {
-                      _selectedTime = TimeOfDay(hour: duration.inHours, minute: duration.inMinutes % 60);
-                    });
-                  },
+                SizedBox(height: 10),
+                Text(
+                  '単位： ${widget.selectedUnit}',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
-              ),
-              SizedBox(height: 20),
-              Center(
-                child: ElevatedButton(
-                  onPressed: _addGoal,
-                  child: const Text('この内容で追加'),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    textStyle: TextStyle(fontSize: 16),
+                SizedBox(height: 20),
+                TextField(
+                  controller: _valueController,
+                  decoration: InputDecoration(
+                    labelText: '目標値',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                SizedBox(height: 20),
+                Text(
+                  '締切時間',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(
+                  height: 200,
+                  child: CupertinoTimerPicker(
+                    mode: CupertinoTimerPickerMode.hm,
+                    initialTimerDuration: Duration(hours: _selectedTime!.hour, minutes: _selectedTime!.minute),
+                    onTimerDurationChanged: (Duration duration) {
+                      setState(() {
+                        _selectedTime = TimeOfDay(hour: duration.inHours, minute: duration.inMinutes % 60);
+                      });
+                    },
                   ),
                 ),
-              ),
-            ],
+                SizedBox(height: 20),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: _addGoal,
+                    child: const Text('この内容で追加'),
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      textStyle: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -119,20 +121,20 @@ class _SetGoalValueScreenState extends State<SetGoalValueScreen> {
 
   void scheduleNotification(String goalId, String goal, DateTime scheduledTime) async {
     var androidDetails = const AndroidNotificationDetails(
-      'high_importance_channel', // 通知チャネルのID
-      'High Importance Notifications', // 通知チャネルの名前
-      channelDescription: 'This channel is used for important notifications.', // 通知チャネルの説明
+      'high_importance_channel',
+      'High Importance Notifications',
+      channelDescription: 'This channel is used for important notifications.',
       importance: Importance.high,
     );
     var generalNotificationDetails = NotificationDetails(android: androidDetails);
 
-    print('Scheduled time: $scheduledTime'); // スケジュールされる時間を確認するためのデバッグ出力
+    print('Scheduled time: $scheduledTime');
 
     await flutterLocalNotificationsPlugin.zonedSchedule(
       0,
       'Goal Reminder',
       'Time to achieve your goal: $goal',
-      tz.TZDateTime.from(scheduledTime, tz.local),  // 指定した日時に一度だけ通知を送信
+      tz.TZDateTime.from(scheduledTime, tz.local),
       generalNotificationDetails,
       androidAllowWhileIdle: true,
       uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,

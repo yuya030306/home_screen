@@ -41,6 +41,7 @@ class _RegistrationState extends State<Registration> {
           },
         ),
         title: Text('新規アカウントの作成'),
+        backgroundColor: Colors.orange,
       ),
       body: Center(
         child: Column(
@@ -61,21 +62,21 @@ class _RegistrationState extends State<Registration> {
                   labelText: "ユーザーネーム",
                   hintText: "例: username123",
                   prefixIcon: Icon(Icons.person), // アイコンを追加
-                  fillColor: Colors.lightBlue[50],
+                  fillColor: Colors.orange[50],
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(40.0), // 角丸にする
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Colors.blue, width: 2.0), // フォーカス時の色
+                    borderSide: BorderSide(
+                        color: Colors.orange, width: 2.0), // フォーカス時の色
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderSide:
                         BorderSide(color: Colors.grey, width: 1.0), // 通常時の色と幅
                   ),
                   labelStyle: TextStyle(
-                    color: Colors.blue,
+                    color: Colors.orange,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -91,21 +92,21 @@ class _RegistrationState extends State<Registration> {
                   labelText: "メールアドレス",
                   hintText: "例: user@example.com",
                   prefixIcon: Icon(Icons.email), // アイコンを追加
-                  fillColor: Colors.lightBlue[50],
+                  fillColor: Colors.orange[50],
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(40.0), // 角丸にする
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Colors.blue, width: 2.0), // フォーカス時の色
+                    borderSide: BorderSide(
+                        color: Colors.orange, width: 2.0), // フォーカス時の色
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderSide:
                         BorderSide(color: Colors.grey, width: 1.0), // 通常時の色と幅
                   ),
                   labelStyle: TextStyle(
-                    color: Colors.blue,
+                    color: Colors.orange,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -121,19 +122,19 @@ class _RegistrationState extends State<Registration> {
                   labelText: "パスワード（6～20文字）",
                   hintText: "パスワードを入力してください",
                   prefixIcon: Icon(Icons.lock),
-                  fillColor: Colors.lightBlue[50],
+                  fillColor: Colors.orange[50],
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(40.0),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue, width: 2.0),
+                    borderSide: BorderSide(color: Colors.orange, width: 2.0),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Colors.grey, width: 1.0),
                   ),
                   labelStyle: TextStyle(
-                    color: Colors.blue,
+                    color: Colors.orange,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -231,7 +232,7 @@ class _RegistrationState extends State<Registration> {
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: Colors.orange,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),

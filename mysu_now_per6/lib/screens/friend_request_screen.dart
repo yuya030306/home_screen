@@ -40,6 +40,63 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
 
     String friendId = query.docs.first.id;
 
+    // フレンドかどうかの確認
+    DocumentSnapshot userDoc =
+        await _firestore.collection('users').doc(widget.userId).get();
+    Map<String, dynamic>? userData = userDoc.data() as Map<String, dynamic>?;
+    List friends = userData?['friends'] ?? [];
+    if (friends.contains(friendId)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('既にフレンドです')),
+      );
+      return;
+    }
+
+    // フレンド申請中かどうかの確認
+    QuerySnapshot existingRequest = await _firestore
+        .collection('friend_requests')
+        .where('from', isEqualTo: widget.userId)
+        .where('to', isEqualTo: friendId)
+        .where('status', isEqualTo: 'pending')
+        .get();
+    if (existingRequest.docs.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('既にフレンド申請中です')),
+      );
+      return;
+    }
+
+    // 相手からのフレンド申請があるかどうかの確認
+    QuerySnapshot reverseRequest = await _firestore
+        .collection('friend_requests')
+        .where('from', isEqualTo: friendId)
+        .where('to', isEqualTo: widget.userId)
+        .where('status', isEqualTo: 'pending')
+        .get();
+    if (reverseRequest.docs.isNotEmpty) {
+      // 相手からのフレンド申請が存在する場合、両方のリクエストを承認してフレンドにする
+      await _firestore
+          .collection('friend_requests')
+          .doc(reverseRequest.docs.first.id)
+          .update({
+        'status': 'accepted',
+      });
+      await _firestore.collection('users').doc(widget.userId).update({
+        'friends': FieldValue.arrayUnion([friendId]),
+      });
+      await _firestore.collection('users').doc(friendId).update({
+        'friends': FieldValue.arrayUnion([widget.userId]),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('フレンドになりました')),
+      );
+
+      _controller.clear();
+      _getPendingRequestsCount();
+      return;
+    }
+
     await _firestore.collection('friend_requests').add({
       'from': widget.userId,
       'to': friendId,
@@ -148,10 +205,9 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
               label: Text(
                 'フレンド承認待ち',
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  fontSize: 18.0,
-                ),
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    fontSize: 18.0),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,

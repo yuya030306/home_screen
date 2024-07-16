@@ -213,6 +213,7 @@ class _GraphScreenState extends State<GraphScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('グラフ'),
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.orange,
       ),
       body: CustomPaint(

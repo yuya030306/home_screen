@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart'; // Add this import
+import 'package:firebase_auth/firebase_auth.dart'; // Add this import
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -72,9 +74,47 @@ class RankingScreen extends StatefulWidget {
 class _RankingScreenState extends State<RankingScreen> {
   String? _selectedCategory;
   List<Map<String, dynamic>> _rankingItems = [];
-  final TextEditingController _categoryController = TextEditingController();
+  List<String> _categories = [];
   bool _isLoading = false;
-  DateTime _selectedMonth = DateTime.now(); // Add this line
+  DateTime _selectedMonth = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCategories();
+  }
+
+  Future<void> _fetchCategories() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('ユーザーがログインしていません');
+      }
+
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('presetGoals')
+          .where('userId', isEqualTo: user.uid)
+          .get();
+
+      List<String> categories = snapshot.docs.map((doc) {
+        return doc['goal'] as String;
+      }).toList();
+
+      setState(() {
+        _categories = categories;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('カテゴリの取得中にエラーが発生しました: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   Future<void> _fetchRankingItems() async {
     setState(() {
@@ -109,7 +149,6 @@ class _RankingScreenState extends State<RankingScreen> {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
         String userId = data['userId'] ?? 'Unknown';
 
-        // データのフィールドをチェックし、デフォルト値を設定
         String username = 'Unknown';
         Color avatarColor = Colors.blue;
         if (data.containsKey('userId')) {
@@ -161,9 +200,9 @@ class _RankingScreenState extends State<RankingScreen> {
     }
   }
 
-  void _onCategoryChanged() {
+  void _onCategoryChanged(String? newValue) {
     setState(() {
-      _selectedCategory = _categoryController.text.trim();
+      _selectedCategory = newValue;
       _fetchRankingItems();
     });
   }
@@ -193,138 +232,158 @@ class _RankingScreenState extends State<RankingScreen> {
     });
   }
 
-  @override
-  void dispose() {
-    _categoryController.dispose();
-    super.dispose();
+  String _getMonthlyTitle() {
+    switch (_selectedMonth.month) {
+      case 1:
+        return '${_selectedMonth.year}年1月';
+      case 2:
+        return '${_selectedMonth.year}年2月';
+      case 3:
+        return '${_selectedMonth.year}年3月';
+      case 4:
+        return '${_selectedMonth.year}年4月';
+      case 5:
+        return '${_selectedMonth.year}年5月';
+      case 6:
+        return '${_selectedMonth.year}年6月';
+      case 7:
+        return '${_selectedMonth.year}年7月';
+      case 8:
+        return '${_selectedMonth.year}年8月';
+      case 9:
+        return '${_selectedMonth.year}年9月';
+      case 10:
+        return '${_selectedMonth.year}年10月';
+      case 11:
+        return '${_selectedMonth.year}年11月';
+      case 12:
+        return '${_selectedMonth.year}年12月';
+      default:
+        return '${_selectedMonth.year}年${_selectedMonth.month}月';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text('ランキング'),
-          backgroundColor: Colors.orange,
-        ),
-        body: CustomPaint(
-          painter: BackgroundPainter(),
-          child: Column(
-              children: [
-          Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _categoryController,
-                  decoration: InputDecoration(
-                    labelText: 'カテゴリーを入力',
-                    fillColor: Colors.white,
-                    filled: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
+      appBar: AppBar(
+        title: Text('ランキング'),
+        backgroundColor: Colors.orange,
+      ),
+      body: CustomPaint(
+        painter: BackgroundPainter(),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: DropdownButton<String>(
+                      hint: Text('カテゴリーを選択'),
+                      value: _selectedCategory,
+                      onChanged: _onCategoryChanged,
+                      items: _categories.map((String category) {
+                        return DropdownMenuItem<String>(
+                          value: category,
+                          child: Text(category),
+                        );
+                      }).toList(),
                     ),
                   ),
+                ],
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.arrow_left),
+                  onPressed: () => _changeMonth(-1),
+                ),
+                Text(
+                  _getMonthlyTitle(),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  icon: Icon(Icons.arrow_right),
+                  onPressed: () => _changeMonth(1),
+                ),
+              ],
+            ),
+            if (_isLoading)
+              Expanded(
+                child: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (_selectedCategory != null && _selectedCategory!.isNotEmpty)
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _rankingItems.length,
+                  itemBuilder: (context, index) {
+                    final item = _rankingItems[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      child: Container(
+                        padding: const EdgeInsets.all(16.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 10,
+                              offset: Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              '${index + 1}位',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            CircleAvatar(
+                              backgroundColor: item['avatarColor'],
+                              child: Text(
+                                item['username'][0].toUpperCase(),
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item['username'],
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
+                                SizedBox(height: 5),
+                                Text(
+                                  '記録: ${item['value'].toInt()}',
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                                Text(
+                                  '日付: ${DateFormat.yMMMd().format(item['deadline'] as DateTime)}',
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
-              IconButton(
-                icon: Icon(Icons.search),
-                onPressed: _onCategoryChanged,
-              ),
-            ],
-          ),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            IconButton(
-              icon: Icon(Icons.arrow_left),
-              onPressed: () => _changeMonth(-1),
-            ),
-            Text(
-              DateFormat.yMMMM().format(_selectedMonth),
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            IconButton(
-              icon: Icon(Icons.arrow_right),
-              onPressed: () => _changeMonth(1),
-            ),
           ],
         ),
-        if (_isLoading)
-    Expanded(
-      child: Center(
-        child: CircularProgressIndicator(),
       ),
-    )
-    else if (_selectedCategory != null && _selectedCategory!.isNotEmpty)
-    Expanded(
-    child: ListView.builder(
-    itemCount: _rankingItems.length,
-    itemBuilder: (context, index) {
-    final item = _rankingItems[index];
-    return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-    child: Container(
-    padding: const EdgeInsets.all(16.0),
-    decoration: BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(10),
-    boxShadow: [
-    BoxShadow(
-    color: Colors.black12,
-    blurRadius: 10,
-    offset: Offset(0, 5),
-    ),
-    ],
-    ),
-    child: Row(
-    children: [
-    Text(
-    '${index + 1}位',
-    style: TextStyle(
-    fontSize: 18,
-    fontWeight: FontWeight.bold,
-    ),
-    ),
-    SizedBox(width: 10),
-    CircleAvatar(
-    backgroundColor: item['avatarColor'],
-    child: Text(
-    item['username'][0].toUpperCase(),
-    style: TextStyle(color: Colors.white),
-    ),
-    ),
-    SizedBox(width: 10),
-    Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-    Text(
-    item['username'],
-      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-    ),
-      SizedBox(height: 5),
-      Text(
-        '記録: ${item['value'].toInt()}',
-        style: TextStyle(fontSize: 16),
-      ),
-      Text(
-        '日付: ${DateFormat.yMMMd().format(item['deadline'] as DateTime)}',
-        style: TextStyle(fontSize: 14),
-      ),
-    ],
-    ),
-    ],
-    ),
-    ),
-    );
-    },
-    ),
-    ),
-              ],
-          ),
-        ),
     );
   }
 }

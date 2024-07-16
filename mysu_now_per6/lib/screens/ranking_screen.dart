@@ -212,7 +212,7 @@ class _RankingScreenState extends State<RankingScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('エラー'),
-        content: Text('そのカテゴリは存在しません。'),
+        content: Text('そのカテゴリの記録はまだありません。'),
         actions: [
           TextButton(
             onPressed: () {

@@ -34,7 +34,10 @@ class _GraphScreenState extends State<GraphScreen> {
 
   Future<void> _fetchGoals() async {
     final firestore = FirebaseFirestore.instance;
-    final goalsSnapshot = await firestore.collection('presetGoals').get();
+    final goalsSnapshot = await firestore
+        .collection('presetGoals')
+        .where('userId', isEqualTo: widget.userId)
+        .get();
     List<String> goals =
         goalsSnapshot.docs.map((doc) => doc['goal'] as String).toList();
 
@@ -60,6 +63,7 @@ class _GraphScreenState extends State<GraphScreen> {
     final goalDoc = await firestore
         .collection('presetGoals')
         .where('goal', isEqualTo: _selectedGoal)
+        .where('userId', isEqualTo: widget.userId)
         .limit(1)
         .get();
 
@@ -75,12 +79,19 @@ class _GraphScreenState extends State<GraphScreen> {
     final snapshot = await firestore
         .collection('records')
         .where('goal', isEqualTo: _selectedGoal)
-        .orderBy('date')
+        .where('userId', isEqualTo: widget.userId)
+        .orderBy('timestamp')
         .get();
 
     List<_RecordData> records = snapshot.docs.map((doc) {
+      DateTime timestamp = (doc['timestamp'] as Timestamp)
+          .toDate()
+          .toLocal()
+          .add(Duration(days: 1)); // 1日を追加
+      String formattedDate =
+          '${timestamp.year}-${timestamp.month}-${timestamp.day}';
       return _RecordData(
-        date: doc['date'] ?? '',
+        date: formattedDate,
         value: double.tryParse(doc['value'] ?? '0') ?? 0,
       );
     }).toList();
@@ -89,7 +100,7 @@ class _GraphScreenState extends State<GraphScreen> {
 
     Map<String, double> weeklyDataMap = Map.fromIterable(
       List.generate(7, (index) => startDate.add(Duration(days: index))),
-      key: (date) => date.toString().split(' ')[0],
+      key: (date) => '${date.year}-${date.month}-${date.day}',
       value: (date) => 0.0,
     );
 
@@ -111,12 +122,19 @@ class _GraphScreenState extends State<GraphScreen> {
     final snapshot = await firestore
         .collection('records')
         .where('goal', isEqualTo: _selectedGoal)
-        .orderBy('date')
+        .where('userId', isEqualTo: widget.userId)
+        .orderBy('timestamp')
         .get();
 
     List<_RecordData> records = snapshot.docs.map((doc) {
+      DateTime timestamp = (doc['timestamp'] as Timestamp)
+          .toDate()
+          .toLocal()
+          .add(Duration(days: 1)); // 1日を追加
+      String formattedDate =
+          '${timestamp.year}-${timestamp.month}-${timestamp.day}';
       return _RecordData(
-        date: doc['date'] ?? '',
+        date: formattedDate,
         value: double.tryParse(doc['value'] ?? '0') ?? 0,
       );
     }).toList();
@@ -129,7 +147,7 @@ class _GraphScreenState extends State<GraphScreen> {
     Map<String, double> monthlyDataMap = Map.fromIterable(
       List.generate(lastDayOfMonth.day,
           (index) => firstDayOfMonth.add(Duration(days: index))),
-      key: (date) => date.toString().split(' ')[0],
+      key: (date) => '${date.year}-${date.month}-${date.day}',
       value: (date) => 0.0,
     );
 

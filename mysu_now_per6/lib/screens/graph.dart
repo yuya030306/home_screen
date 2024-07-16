@@ -86,7 +86,7 @@ class _GraphScreenState extends State<GraphScreen> {
     List<_RecordData> records = snapshot.docs.map((doc) {
       DateTime timestamp = (doc['timestamp'] as Timestamp)
           .toDate()
-          .toLocal()
+          .toLocal();
       String formattedDate =
           '${timestamp.year}-${timestamp.month}-${timestamp.day}';
       return _RecordData(
@@ -128,7 +128,7 @@ class _GraphScreenState extends State<GraphScreen> {
     List<_RecordData> records = snapshot.docs.map((doc) {
       DateTime timestamp = (doc['timestamp'] as Timestamp)
           .toDate()
-          .toLocal()
+          .toLocal();
       String formattedDate =
           '${timestamp.year}-${timestamp.month}-${timestamp.day}';
       return _RecordData(

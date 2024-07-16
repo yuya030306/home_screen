@@ -6,6 +6,8 @@ import 'authentication_error.dart';
 import 'registration.dart';
 import 'email_check.dart';
 import 'home_screen.dart';
+import 'package:provider/provider.dart';
+import 'alarm_manager.dart';
 
 class Login extends StatefulWidget {
   final CameraDescription camera;
@@ -44,6 +46,9 @@ class _LoginState extends State<Login> {
       _user = _result?.user;
 
       if (_user?.emailVerified ?? false) {
+        final alarmManager = Provider.of<AlarmManager>(context, listen: false);
+        await alarmManager.resetAlarm();
+
         Navigator.push(
           context,
           MaterialPageRoute(

@@ -124,30 +124,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
                     ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: IconButton(
-                        icon: Icon(Icons.palette, color: Colors.white, size: 35.0),
-                        onPressed: () async {
-                          final color = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AvatarSelectionDialog(
-                                initialColor: _avatarColor,
-                              ),
-                            ),
-                          );
-
-                          if (color != null) {
-                            setState(() {
-                              _avatarColor = color;
-                            });
-                            _saveAvatarColor(color);
-                          }
-                        },
-                      ),
-                    ),
                   ],
                 ),
                 SizedBox(height: 20),
@@ -198,15 +174,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _saveAvatarColor(Color color) async {
-    if (_currentUser != null) {
-      String userId = _currentUser!.uid;
-      await FirebaseFirestore.instance.collection('users').doc(userId).update({
-        'avatarColor': color.value.toRadixString(16),
-      });
-    }
   }
 }
 
@@ -303,103 +270,103 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text('プロフィール編集'),
-          backgroundColor: Colors.orange,
-        ),
-        body: CustomPaint(
+      appBar: AppBar(
+        title: Text('プロフィール編集'),
+        backgroundColor: Colors.orange,
+      ),
+      body: CustomPaint(
         painter: BackgroundPainter(),
-    child: Center(
-    child: Container(
-    width: 300, // 白い枠の幅を小さく
-    height: 370, // 白い枠の高さを小さく
-    padding: EdgeInsets.all(20),
-    decoration: BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(20),
-    boxShadow: [
-    BoxShadow(
-    color: Colors.black12,
-    blurRadius: 10,
-    offset: Offset(0, 5),
-    ),
-    ],
-    ),
-    child: Column(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-    Stack(
-    children: [
-    Container(
-    width: 100,
-    height: 100,
-    decoration: BoxDecoration(
-    shape: BoxShape.circle,
-    color: _selectedColor,
-    boxShadow: [
-    BoxShadow(
-    color: Colors.black26,
-    blurRadius: 10,
-    offset: Offset(0, 5),
-    ),
-    ],
-    ),
-    ),
-    Positioned(
-    bottom: 0,
-      right: 0,
-      child: IconButton(
-        icon: Icon(Icons.palette, color: Colors.white),
-        onPressed: () async {
-          final color = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AvatarSelectionDialog(
-                initialColor: _selectedColor,
-              ),
+        child: Center(
+          child: Container(
+            width: 300, // 白い枠の幅を小さく
+            height: 370, // 白い枠の高さを小さく
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  offset: Offset(0, 5),
+                ),
+              ],
             ),
-          );
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Stack(
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _selectedColor,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 10,
+                            offset: Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: IconButton(
+                        icon: Icon(Icons.palette, color: Colors.white),
+                        onPressed: () async {
+                          final color = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AvatarSelectionDialog(
+                                initialColor: _selectedColor,
+                              ),
+                            ),
+                          );
 
-          if (color != null) {
-            setState(() {
-              _selectedColor = color;
-            });
-          }
-        },
-      ),
-    ),
-    ],
-    ),
-      SizedBox(height: 20),
-      TextField(
-        controller: _usernameController,
-        decoration: InputDecoration(
-          labelText: 'ユーザ名',
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+                          if (color != null) {
+                            setState(() {
+                              _selectedColor = color;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+                TextField(
+                  controller: _usernameController,
+                  decoration: InputDecoration(
+                    labelText: 'ユーザ名',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _isCheckingUsername ? null : _saveProfileChanges,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                  ),
+                  child: _isCheckingUsername
+                      ? CircularProgressIndicator()
+                      : Text('保存', style: TextStyle(fontSize: 18)),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-      SizedBox(height: 20),
-      ElevatedButton(
-        onPressed: _isCheckingUsername ? null : _saveProfileChanges,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.orange,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-        ),
-        child: _isCheckingUsername
-            ? CircularProgressIndicator()
-            : Text('保存', style: TextStyle(fontSize: 18)),
-      ),
-    ],
-    ),
-    ),
-    ),
-        ),
     );
   }
 
@@ -410,7 +377,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 }
 
-class AvatarSelectionDialog extends StatefulWidget {
+class AvatarSelectionDialog extends StatelessWidget {
   final Color initialColor;
 
   AvatarSelectionDialog({
@@ -418,68 +385,58 @@ class AvatarSelectionDialog extends StatefulWidget {
   });
 
   @override
-  _AvatarSelectionDialogState createState() => _AvatarSelectionDialogState();
-}
-
-class _AvatarSelectionDialogState extends State<AvatarSelectionDialog> {
-  late Color _selectedColor;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedColor = widget.initialColor;
-  }
-
-  @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text('アイコン編集'),
-      content: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _selectedColor,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 10,
-                    offset: Offset(0, 5),
-                  ),
+      content: Container(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: initialColor,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 10,
+                      offset: Offset(0, 5),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20),
+              Text('カラー選択'),
+              SizedBox(height: 10),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  _colorOption(context, Colors.red),
+                  _colorOption(context, Colors.green),
+                  _colorOption(context, Colors.blue),
+                  _colorOption(context, Colors.yellow),
+                  _colorOption(context, Colors.orange),
+                  _colorOption(context, Colors.purple),
+                  _colorOption(context, Colors.brown),
+                  _colorOption(context, Colors.pink),
+                  _colorOption(context, Colors.cyan),
+                  _colorOption(context, Colors.lime),
+                  _colorOption(context, Colors.indigo),
+                  _colorOption(context, Colors.teal),
                 ],
               ),
-            ),
-            SizedBox(height: 20),
-            Text('カラー選択'),
-            SizedBox(height: 10),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                _colorOption(Colors.red),
-                _colorOption(Colors.green),
-                _colorOption(Colors.blue),
-                _colorOption(Colors.yellow),
-                _colorOption(Colors.orange),
-                _colorOption(Colors.purple),
-                _colorOption(Colors.brown),
-                _colorOption(Colors.pink),
-                _colorOption(Colors.cyan),
-                _colorOption(Colors.lime),
-                _colorOption(Colors.indigo),
-                _colorOption(Colors.teal),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       actions: [
         TextButton(
           onPressed: () {
-            Navigator.pop(context, _selectedColor);
+            Navigator.pop(context, initialColor);
           },
           child: Text('選択'),
         ),
@@ -487,12 +444,10 @@ class _AvatarSelectionDialogState extends State<AvatarSelectionDialog> {
     );
   }
 
-  Widget _colorOption(Color color) {
+  Widget _colorOption(BuildContext context, Color color) {
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _selectedColor = color;
-        });
+        Navigator.pop(context, color);
       },
       child: Container(
         width: 40,
@@ -500,17 +455,15 @@ class _AvatarSelectionDialogState extends State<AvatarSelectionDialog> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: color,
-          boxShadow: _selectedColor == color
-              ? [
+          boxShadow: [
             BoxShadow(
               color: Colors.black26,
               blurRadius: 10,
               offset: Offset(0, 5),
             ),
-          ]
-              : [],
+          ],
         ),
-        child: _selectedColor == color ? Icon(Icons.check, color: Colors.white) : null,
+        child: color == initialColor ? Icon(Icons.check, color: Colors.white) : null,
       ),
     );
   }
@@ -635,5 +588,3 @@ class BackgroundPainter extends CustomPainter {
     return false;
   }
 }
-
-

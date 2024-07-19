@@ -52,10 +52,12 @@ class _RecordGoalsScreenState extends State<RecordGoalsScreen> {
         'userId': user.uid,
       });
 
-      await _firestore.collection('goals').doc(widget.goal.id).delete();
+      await _firestore.collection('goals').doc(widget.goal.id).update({
+        'isAchieved': true,
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Record saved and goal deleted successfully!')),
+        SnackBar(content: Text('Record saved and goal marked as achieved!')),
       );
 
       _valueController.clear();
@@ -133,20 +135,20 @@ class _RecordGoalsScreenState extends State<RecordGoalsScreen> {
                 onPressed: _isDeadlinePassed
                     ? null
                     : () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => CameraScreen(
-                              camera: widget.camera,
-                              userId: widget.userId,
-                            ),
-                          ),
-                        );
-                      },
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => CameraScreen(
+                        camera: widget.camera,
+                        userId: widget.userId,
+                      ),
+                    ),
+                  );
+                },
                 icon: Icon(Icons.camera_alt, color: Colors.white),
                 label: Text('カメラを起動'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
-                      _isDeadlinePassed ? Colors.black : Colors.orange,
+                  _isDeadlinePassed ? Colors.black : Colors.orange,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),

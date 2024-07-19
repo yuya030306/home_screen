@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart'; // ここでCupertinoPickerをインポート
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:firebase_auth/firebase_auth.dart';
@@ -46,6 +47,9 @@ class _SetGoalValueScreenState extends State<SetGoalValueScreen> {
       }).then((documentReference) {
         scheduleNotification(
             documentReference.id, widget.selectedPreset!, deadline);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('保存されました')),
+        );
       });
 
       Navigator.of(context).pop();
@@ -93,6 +97,9 @@ class _SetGoalValueScreenState extends State<SetGoalValueScreen> {
                     border: OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^[1-9]\d*')),
+                  ],
                 ),
                 SizedBox(height: 20),
                 Text(
@@ -116,10 +123,9 @@ class _SetGoalValueScreenState extends State<SetGoalValueScreen> {
                     onPressed: _addGoal,
                     child: const Text('この内容で追加'),
                     style: ElevatedButton.styleFrom(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       textStyle: TextStyle(fontSize: 16),
-                      backgroundColor: Colors.orange, // ボタンの色をオレンジに設定
+                      backgroundColor: Colors.orange,
                     ),
                   ),
                 ),
@@ -140,19 +146,19 @@ class _SetGoalValueScreenState extends State<SetGoalValueScreen> {
       importance: Importance.high,
     );
     var generalNotificationDetails =
-        NotificationDetails(android: androidDetails);
+    NotificationDetails(android: androidDetails);
 
-    print('Scheduled time: $scheduledTime');
+    final notificationTime = scheduledTime.subtract(Duration(minutes: 5));
 
     await flutterLocalNotificationsPlugin.zonedSchedule(
       0,
       'Goal Reminder',
-      'Time to achieve your goal: $goal',
-      tz.TZDateTime.from(scheduledTime, tz.local),
+      '5分後に目標: $goal の締切です',
+      tz.TZDateTime.from(notificationTime, tz.local),
       generalNotificationDetails,
       androidAllowWhileIdle: true,
       uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
+      UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 }
@@ -186,7 +192,7 @@ class _CustomTimerPickerState extends State<CustomTimerPicker> {
         Expanded(
           child: CupertinoPicker(
             scrollController:
-                FixedExtentScrollController(initialItem: selectedHour),
+            FixedExtentScrollController(initialItem: selectedHour),
             itemExtent: 32.0,
             onSelectedItemChanged: (int index) {
               setState(() {
@@ -201,11 +207,11 @@ class _CustomTimerPickerState extends State<CustomTimerPicker> {
             }),
           ),
         ),
-        SizedBox(width: 8), // 時と分の間にスペースを追加
+        SizedBox(width: 8),
         Expanded(
           child: CupertinoPicker(
             scrollController:
-                FixedExtentScrollController(initialItem: selectedMinute),
+            FixedExtentScrollController(initialItem: selectedMinute),
             itemExtent: 32.0,
             onSelectedItemChanged: (int index) {
               setState(() {

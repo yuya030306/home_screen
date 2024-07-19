@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:camera/camera.dart';
+import 'package:intl/intl.dart'; // DateFormatをインポート
 import '../../theme.dart';
 import 'goal_card.dart';
 import 'add_goal_from_preset_screen.dart';
+import '../record_goals.dart'; // RecordGoalsScreenをインポート
 
 class DashboardScreen extends StatefulWidget {
   final CameraDescription camera;
@@ -36,7 +38,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: StreamBuilder(
                 stream: FirebaseFirestore.instance
                     .collection('goals')
-                    .where('deadline', isGreaterThan: Timestamp.now())
+                    .where('userId', isEqualTo: widget.userId)
                     .snapshots(),
                 builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
                   if (!snapshot.hasData) {
@@ -49,13 +51,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     itemCount: snapshot.data!.docs.length,
                     itemBuilder: (context, index) {
                       var goal = snapshot.data!.docs[index];
-                      return GoalCard(
-                        goal: goal,
-                        showGoalDialog: ({DocumentSnapshot? goal}) => {},
-                        value: goal['value'],
-                        unit: goal['unit'],
-                        camera: widget.camera,
-                        userId: widget.userId,
+                      Map<String, dynamic> goalData = goal.data() as Map<String, dynamic>;
+                      final isAchieved = goalData['isAchieved'] ?? false;
+                      DateTime deadline = (goal['deadline'] as Timestamp).toDate();
+                      bool isPastDeadline = deadline.isBefore(DateTime.now());
+                      Color cardColor = isPastDeadline ? Colors.grey.shade300 : Colors.white;
+                      cardColor = isAchieved ? Colors.green.shade100 : cardColor;
+
+                      return Card(
+                        color: cardColor,
+                        child: ListTile(
+                          title: Text(goal['goal']),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('${goal['value']} ${goal['unit']}'),
+                              Text('締切: ${DateFormat('kk:mm').format(deadline)}まで'),
+                            ],
+                          ),
+                          onTap: isPastDeadline || isAchieved
+                              ? null
+                              : () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => RecordGoalsScreen(
+                                  camera: widget.camera,
+                                  userId: widget.userId,
+                                  goal: goal,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       );
                     },
                   );

@@ -13,6 +13,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'goals/dashboard_screen.dart';
+import 'goals/goal_card.dart';
 
 class HomeScreen extends StatefulWidget {
   final CameraDescription camera;
@@ -141,7 +142,7 @@ class HomeContent extends StatelessWidget {
           children: [
             SizedBox(height: 40),
             Text(
-              '目標管理', // タイトルを追加
+              '目標管理',
               style: TextStyle(fontSize: 30),
             ),
             ElevatedButton.icon(
@@ -152,7 +153,7 @@ class HomeContent extends StatelessWidget {
                       builder: (context) =>
                           AlarmPage(camera: camera, userId: userId)),
                 ).then((_) {
-                  reloadAlarmTime(); // アラームページから戻ってきた時にアラーム時刻を再読み込み
+                  reloadAlarmTime();
                 });
               },
               icon: Icon(Icons.alarm, size: 20),
@@ -178,10 +179,7 @@ class HomeContent extends StatelessWidget {
                     return CircularProgressIndicator();
                   }
 
-                  final goals = snapshot.data!.docs.where((goal) {
-                    final deadline = (goal['deadline'] as Timestamp).toDate();
-                    return deadline.isAfter(DateTime.now());
-                  }).toList();
+                  final goals = snapshot.data!.docs;
 
                   if (goals.isEmpty) {
                     return Padding(
@@ -195,23 +193,15 @@ class HomeContent extends StatelessWidget {
                     itemCount: goals.length,
                     itemBuilder: (context, index) {
                       var goal = goals[index];
-                      return Card(
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 16.0),
-                          width: MediaQuery.of(context).size.width * 0.8,
-                          child: ListTile(
-                            title: Text(goal['goal']),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('${goal['value']} ${goal['unit']}'),
-                                Text(
-                                  '締切: ${DateFormat('yyyy-MM-dd HH:mm:ss').format((goal['deadline'] as Timestamp).toDate())}',
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                      Map<String, dynamic> goalData = goal.data() as Map<String, dynamic>;
+                      final isAchieved = goalData['isAchieved'] ?? false;
+                      return GoalCard(
+                        goal: goal,
+                        showGoalDialog: ({DocumentSnapshot? goal}) => {},
+                        value: goal['value'],
+                        unit: goal['unit'],
+                        camera: camera,
+                        userId: userId,
                       );
                     },
                   );

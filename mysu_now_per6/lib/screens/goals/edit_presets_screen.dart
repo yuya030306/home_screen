@@ -15,13 +15,23 @@ class _EditPresetsScreenState extends State<EditPresetsScreen> {
 
   void _addPreset() async {
     if (_goalController.text.isNotEmpty && _unitController.text.isNotEmpty && user != null) {
-      FirebaseFirestore.instance.collection('presetGoals').add({
-        'goal': _goalController.text,
-        'unit': _unitController.text,
-        'userId': user?.uid,
-      });
-      _goalController.clear();
-      _unitController.clear();
+      if (RegExp(r'^[0-9]+$').hasMatch(_unitController.text)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('単位には数値を入力できません')),
+        );
+      } else {
+        FirebaseFirestore.instance.collection('presetGoals').add({
+          'goal': _goalController.text,
+          'unit': _unitController.text,
+          'userId': user?.uid,
+        });
+        _goalController.clear();
+        _unitController.clear();
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('目標と単位を入力してください')),
+      );
     }
   }
 
@@ -87,27 +97,28 @@ class _EditPresetsScreenState extends State<EditPresetsScreen> {
                   return ListView.builder(
                     itemCount: presets.length,
                     itemBuilder: (context, index) {
+                      var preset = presets[index];
                       return Card(
                         margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                         child: ListTile(
                           leading: Icon(Icons.edit, color: Colors.blue),
                           title: TextFormField(
-                            initialValue: presets[index]['goal'] ?? '',
+                            initialValue: preset['goal'] ?? '',
                             decoration: InputDecoration(labelText: '目標'),
                             onChanged: (value) {
-                              _updatePreset(presets[index]['id']!, 'goal', value);
+                              _updatePreset(preset['id']!, 'goal', value);
                             },
                           ),
                           subtitle: TextFormField(
-                            initialValue: presets[index]['unit'] ?? '',
+                            initialValue: preset['unit'] ?? '',
                             decoration: InputDecoration(labelText: '単位'),
                             onChanged: (value) {
-                              _updatePreset(presets[index]['id']!, 'unit', value);
+                              _updatePreset(preset['id']!, 'unit', value);
                             },
                           ),
                           trailing: IconButton(
                             icon: Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => _deletePreset(presets[index]['id']!),
+                            onPressed: () => _deletePreset(preset['id']!),
                           ),
                         ),
                       );

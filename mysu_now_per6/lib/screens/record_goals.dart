@@ -10,9 +10,10 @@ class RecordGoalsScreen extends StatefulWidget {
   final CameraDescription camera;
   final String userId;
   final DocumentSnapshot goal;
+  final bool isPastDeadline;
 
   RecordGoalsScreen(
-      {required this.camera, required this.userId, required this.goal});
+      {required this.camera, required this.userId, required this.goal, required this.isPastDeadline});
 
   @override
   _RecordGoalsScreenState createState() => _RecordGoalsScreenState();
@@ -57,7 +58,7 @@ class _RecordGoalsScreenState extends State<RecordGoalsScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Record saved and goal marked as achieved!')),
+        SnackBar(content: Text('保存できました')),
       );
 
       _valueController.clear();
@@ -67,6 +68,24 @@ class _RecordGoalsScreenState extends State<RecordGoalsScreen> {
         SnackBar(content: Text('Please fill out all fields')),
       );
     }
+  }
+
+  Future<void> _showErrorDialog() async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('エラー'),
+        content: Text('締切時間を過ぎているためカメラは起動できません'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -87,7 +106,7 @@ class _RecordGoalsScreenState extends State<RecordGoalsScreen> {
         body: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start, // 文字を左揃えに変更
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 '目標: ${widget.goal['goal']}',
@@ -105,7 +124,7 @@ class _RecordGoalsScreenState extends State<RecordGoalsScreen> {
                   labelText: '達成した数値',
                   labelStyle: TextStyle(
                       color: Colors.orange,
-                      fontWeight: FontWeight.bold), // ラベルの色をオレンジに変更
+                      fontWeight: FontWeight.bold),
                   fillColor: Colors.orange[50],
                   filled: true,
                   border: OutlineInputBorder(
@@ -117,7 +136,7 @@ class _RecordGoalsScreenState extends State<RecordGoalsScreen> {
                   ),
                 ),
                 keyboardType: TextInputType.number,
-                style: TextStyle(color: Colors.black), // 入力文字の色を変更
+                style: TextStyle(color: Colors.black),
               ),
               SizedBox(height: 20),
               ElevatedButton(
@@ -132,8 +151,8 @@ class _RecordGoalsScreenState extends State<RecordGoalsScreen> {
               ),
               SizedBox(height: 20),
               ElevatedButton.icon(
-                onPressed: _isDeadlinePassed
-                    ? null
+                onPressed: widget.isPastDeadline
+                    ? _showErrorDialog
                     : () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
@@ -147,8 +166,7 @@ class _RecordGoalsScreenState extends State<RecordGoalsScreen> {
                 icon: Icon(Icons.camera_alt, color: Colors.white),
                 label: Text('カメラを起動'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                  _isDeadlinePassed ? Colors.black : Colors.orange,
+                  backgroundColor: widget.isPastDeadline ? Colors.grey : Colors.orange,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),

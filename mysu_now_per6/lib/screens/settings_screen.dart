@@ -5,6 +5,7 @@ import 'profile_screen.dart';
 import 'friends_list_screen.dart';
 import 'login.dart';
 import 'friend_request_screen.dart';
+import 'how_to_use_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   final CameraDescription camera;
@@ -101,6 +102,24 @@ class SettingsScreen extends StatelessWidget {
                     padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
                   ),
                   child: Text('フレンド追加確認', style: TextStyle(fontSize: 18)),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => HowToUseScreen()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                  ),
+                  child: Text('このアプリの使い方', style: TextStyle(fontSize: 18)),
                 ),
               ],
             ),

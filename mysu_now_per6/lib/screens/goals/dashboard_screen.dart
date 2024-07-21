@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:camera/camera.dart';
-import 'package:intl/intl.dart'; // DateFormatをインポート
+import 'package:intl/intl.dart';
 import '../../theme.dart';
 import 'goal_card.dart';
 import 'add_goal_from_preset_screen.dart';
-import '../record_goals.dart'; // RecordGoalsScreenをインポート
+import '../record_goals.dart';
 
 class DashboardScreen extends StatefulWidget {
   final CameraDescription camera;
@@ -69,9 +69,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               Text('締切: ${DateFormat('kk:mm').format(deadline)}まで'),
                             ],
                           ),
-                          onTap: isPastDeadline || isAchieved
-                              ? null
-                              : () {
+                          onTap: isAchieved ? null : () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -79,6 +77,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   camera: widget.camera,
                                   userId: widget.userId,
                                   goal: goal,
+                                  isPastDeadline: isPastDeadline,
                                 ),
                               ),
                             );

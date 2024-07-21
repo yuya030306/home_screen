@@ -43,6 +43,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
   CalendarFormat _calendarFormat = CalendarFormat.month;
   int _currentImageIndex = 0;
   String? _goalForSelectedDay;
+  List<_RecordData> _monthlyData = [];
+  DateTime _currentMonth = DateTime.now();
 
   @override
   void initState() {
@@ -55,7 +57,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Future<void> _fetchImages() async {
     try {
       FirebaseStorage storage =
-          FirebaseStorage.instanceFor(bucket: 'gs://login-9ab9b.appspot.com');
+      FirebaseStorage.instanceFor(bucket: 'gs://login-9ab9b.appspot.com');
       final ListResult result = await storage.ref(widget.userId).listAll();
       final List<Map<String, String>> urls = [];
       for (var ref in result.items) {
@@ -91,7 +93,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         final Timestamp timestamp = data['timestamp'];
         final String goal = data['goal'];
         final String formattedDate =
-            DateFormat('yyyyMMdd').format(timestamp.toDate());
+        DateFormat('yyyyMMdd').format(timestamp.toDate());
         goals[formattedDate] = goal;
       }
 
@@ -140,6 +142,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         .toList();
   }
 
+
   @override
   Widget build(BuildContext context) {
     final imagesForSelectedDay = _getImagesForDay(_selectedDay);
@@ -152,7 +155,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       backgroundColor: Color.fromARGB(255, 255, 255, 255),
       body: Container(
         decoration: BoxDecoration(
-          color: Colors.white, // 背景色を白色に設定
+          color: Colors.white,
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -164,7 +167,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           children: [
             Container(
               width: MediaQuery.of(context).size.width,
-              height: MediaQuery.of(context).size.height * 0.6,
+              height: MediaQuery.of(context).size.height * 0.5,
               child: TableCalendar(
                 focusedDay: _selectedDay,
                 firstDay: DateTime(2000),
@@ -183,7 +186,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 },
                 headerStyle: HeaderStyle(
                   formatButtonTextStyle:
-                      const TextStyle(color: Color.fromARGB(255, 0, 15, 100)),
+                  const TextStyle(color: Color.fromARGB(255, 1, 12, 78)),
                   formatButtonDecoration: BoxDecoration(
                     color: Color.fromARGB(255, 247, 178, 30),
                     borderRadius: BorderRadius.circular(16.0),
@@ -332,19 +335,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         ElevatedButton(
                           onPressed: _currentImageIndex > 0
                               ? () {
-                                  setState(() {
-                                    _currentImageIndex = (_currentImageIndex -
-                                            1 +
-                                            imagesForSelectedDay.length) %
-                                        imagesForSelectedDay.length;
-                                  });
-                                }
+                            setState(() {
+                              _currentImageIndex = (_currentImageIndex -
+                                  1 +
+                                  imagesForSelectedDay.length) %
+                                  imagesForSelectedDay.length;
+                            });
+                          }
                               : null,
                           child: Icon(Icons.arrow_back),
                           style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 20, vertical: 15),
-                            textStyle: TextStyle(fontSize: 18),
+                            textStyle: TextStyle(fontSize: 20),
                             backgroundColor: Colors.white,
                             foregroundColor: Color.fromARGB(255, 255, 185, 93),
                             shape: CircleBorder(),
@@ -360,15 +363,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               MaterialPageRoute(
                                 builder: (context) => FullScreenImageScreen(
                                   imageUrl:
-                                      imagesForSelectedDay[_currentImageIndex]
-                                          ['url']!,
+                                  imagesForSelectedDay[_currentImageIndex]
+                                  ['url']!,
                                 ),
                               ),
                             );
                           },
                           child: Container(
-                            width: MediaQuery.of(context).size.width * 0.35,
-                            height: MediaQuery.of(context).size.width * 0.35,
+                            width: MediaQuery.of(context).size.width * 0.5,
+                            height: MediaQuery.of(context).size.width * 0.5,
                             margin: EdgeInsets.symmetric(horizontal: 10),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12.0),
@@ -378,7 +381,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               borderRadius: BorderRadius.circular(12.0),
                               child: Image.network(
                                 imagesForSelectedDay[_currentImageIndex]
-                                    ['url']!,
+                                ['url']!,
                                 fit: BoxFit.cover,
                               ),
                             ),
@@ -386,14 +389,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         ),
                         ElevatedButton(
                           onPressed: _currentImageIndex <
-                                  imagesForSelectedDay.length - 1
+                              imagesForSelectedDay.length - 1
                               ? () {
-                                  setState(() {
-                                    _currentImageIndex =
-                                        (_currentImageIndex + 1) %
-                                            imagesForSelectedDay.length;
-                                  });
-                                }
+                            setState(() {
+                              _currentImageIndex =
+                                  (_currentImageIndex + 1) %
+                                      imagesForSelectedDay.length;
+                            });
+                          }
                               : null,
                           child: Icon(Icons.arrow_forward),
                           style: ElevatedButton.styleFrom(
@@ -437,4 +440,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
       _calendarFormat = format;
     });
   }
+}
+
+class _RecordData {
+  final String date;
+  final double value;
+
+  _RecordData({required this.date, required this.value});
 }

@@ -13,20 +13,25 @@ class _EditPresetsScreenState extends State<EditPresetsScreen> {
   final TextEditingController _unitController = TextEditingController();
   final User? user = FirebaseAuth.instance.currentUser;
 
-  void _addPreset() async {
+  Future<void> _addPreset() async {
     if (_goalController.text.isNotEmpty && _unitController.text.isNotEmpty && user != null) {
+      bool isDuplicate = await _checkDuplicatePreset(_goalController.text);
+      if (isDuplicate) {
+        _showErrorDialog('そのプリセット名は既に登録されています。');
+        return;
+      }
+
       if (RegExp(r'^[0-9]+$').hasMatch(_unitController.text)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('単位には数値を入力できません')),
-        );
+        _showErrorDialog('単位に数値は入力できません');
       } else {
-        FirebaseFirestore.instance.collection('presetGoals').add({
+        await FirebaseFirestore.instance.collection('presetGoals').add({
           'goal': _goalController.text,
           'unit': _unitController.text,
           'userId': user?.uid,
         });
         _goalController.clear();
         _unitController.clear();
+        _refresh();
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -35,14 +40,46 @@ class _EditPresetsScreenState extends State<EditPresetsScreen> {
     }
   }
 
-  void _deletePreset(String id) {
-    FirebaseFirestore.instance.collection('presetGoals').doc(id).delete();
+  Future<void> _refresh() async {
+    setState(() {});
+  }
+
+  Future<bool> _checkDuplicatePreset(String goal) async {
+    QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('presetGoals')
+        .where('userId', isEqualTo: user?.uid)
+        .where('goal', isEqualTo: goal)
+        .get();
+    return snapshot.docs.isNotEmpty;
+  }
+
+  Future<void> _deletePreset(String id) async {
+    await FirebaseFirestore.instance.collection('presetGoals').doc(id).delete();
+    _refresh();
   }
 
   void _updatePreset(String id, String field, String value) {
     FirebaseFirestore.instance.collection('presetGoals').doc(id).update({
       field: value,
     });
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('エラー'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -76,6 +113,12 @@ class _EditPresetsScreenState extends State<EditPresetsScreen> {
               Navigator.of(context).pop();
             },
           ),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.refresh),
+              onPressed: _refresh,
+            ),
+          ],
         ),
         body: Column(
           children: [
@@ -113,7 +156,11 @@ class _EditPresetsScreenState extends State<EditPresetsScreen> {
                             initialValue: preset['unit'] ?? '',
                             decoration: InputDecoration(labelText: '単位'),
                             onChanged: (value) {
-                              _updatePreset(preset['id']!, 'unit', value);
+                              if (RegExp(r'^[0-9]+$').hasMatch(value)) {
+                                _showErrorDialog('単位に数値は入力できません');
+                              } else {
+                                _updatePreset(preset['id']!, 'unit', value);
+                              }
                             },
                           ),
                           trailing: IconButton(

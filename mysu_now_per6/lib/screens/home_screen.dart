@@ -34,12 +34,23 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadAlarmTime();
+    _scheduleDailyReset();
   }
 
   Future<void> _loadAlarmTime() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       _alarmTimeString = prefs.getString('alarmTimeString') ?? '00:00';
+    });
+  }
+
+  void _scheduleDailyReset() {
+    var now = DateTime.now();
+    var midnight = DateTime(now.year, now.month, now.day + 1);
+    var duration = midnight.difference(now);
+    Future.delayed(duration, () {
+      setState(() {});
+      _scheduleDailyReset();
     });
   }
 
@@ -72,8 +83,11 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.lightBlue[50],
-      body: _getScreen(_currentIndex),
+      backgroundColor: Colors.orange[50],
+      body: CustomPaint(
+        painter: BackgroundPainter(),
+        child: _getScreen(_currentIndex),
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -95,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SalomonBottomBarItem(
               icon: Icon(Icons.home),
               title: Text("ホーム"),
-              selectedColor: Colors.blue,
+              selectedColor: Colors.orange,
             ),
             SalomonBottomBarItem(
               icon: Icon(Icons.calendar_today),
@@ -134,118 +148,181 @@ class HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(height: 40),
-            Text(
-              '目標管理',
-              style: TextStyle(fontSize: 30),
-            ),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          AlarmPage(camera: camera, userId: userId)),
-                ).then((_) {
-                  reloadAlarmTime();
-                });
-              },
-              icon: Icon(Icons.alarm, size: 20),
-              label: Text('アラーム設定'),
-              style: ElevatedButton.styleFrom(
-                minimumSize: Size(150, 50),
+    var now = DateTime.now();
+    var midnight = DateTime(now.year, now.month, now.day, 0, 0, 0);
+    if (now.isAfter(midnight)) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(height: 40),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            AlarmPage(camera: camera, userId: userId)),
+                  ).then((_) {
+                    reloadAlarmTime();
+                  });
+                },
+                icon: Icon(Icons.alarm, size: 20),
+                label: Text('アラーム設定'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(150, 50),
+                ),
               ),
-            ),
-            SizedBox(height: 20),
-            Text(
-              alarmTimeString,
-              style: TextStyle(fontSize: 36),
-            ),
-            SizedBox(height: 20),
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('goals')
-                    .where('userId', isEqualTo: userId)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return CircularProgressIndicator();
-                  }
+              SizedBox(height: 20),
+              Text(
+                alarmTimeString,
+                style: TextStyle(fontSize: 36),
+              ),
+              SizedBox(height: 20),
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('goals')
+                      .where('userId', isEqualTo: userId)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return CircularProgressIndicator();
+                    }
 
-                  final goals = snapshot.data!.docs;
+                    final goals = snapshot.data!.docs;
 
-                  if (goals.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 80.0),
-                      child: Text('目標がありません'),
+                    if (goals.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 80.0),
+                        child: Text('目標がありません'),
+                      );
+                    }
+
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: goals.length,
+                      itemBuilder: (context, index) {
+                        var goal = goals[index];
+                        Map<String, dynamic> goalData = goal.data() as Map<String, dynamic>;
+                        final isAchieved = goalData['isAchieved'] ?? false;
+                        DateTime deadline = (goal['deadline'] as Timestamp).toDate();
+                        bool isPastDeadline = deadline.isBefore(DateTime.now());
+                        Color cardColor = isPastDeadline ? Colors.grey.shade300 : Colors.white;
+                        cardColor = isAchieved ? Colors.green.shade100 : cardColor;
+
+                        return Card(
+                          color: cardColor,
+                          child: ListTile(
+                            title: Text(goal['goal']),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('${goal['value']} ${goal['unit']}'),
+                                Text('締切: ${DateFormat('kk:mm').format(deadline)}まで'),
+                              ],
+                            ),
+                            onTap: isAchieved ? null : () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => RecordGoalsScreen(
+                                    camera: camera,
+                                    userId: userId,
+                                    goal: goal,
+                                    isPastDeadline: isPastDeadline,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
                     );
-                  }
-
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: goals.length,
-                    itemBuilder: (context, index) {
-                      var goal = goals[index];
-                      Map<String, dynamic> goalData = goal.data() as Map<String, dynamic>;
-                      final isAchieved = goalData['isAchieved'] ?? false;
-                      return GoalCard(
-                        goal: goal,
-                        showGoalDialog: ({DocumentSnapshot? goal}) => {},
-                        value: goal['value'],
-                        unit: goal['unit'],
-                        camera: camera,
-                        userId: userId,
+                  },
+                ),
+              ),
+              SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => RankingScreen()),
                       );
                     },
-                  );
-                },
+                    icon: Icon(Icons.leaderboard, size: 20),
+                    label: Text('ランキング'),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: Size(150, 50),
+                    ),
+                  ),
+                  SizedBox(width: 20),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => DashboardScreen(
+                                camera: camera, userId: userId)),
+                      );
+                    },
+                    icon: Icon(Icons.edit, size: 20),
+                    label: Text('目標入力ボタン'),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: Size(150, 50),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => RankingScreen()),
-                    );
-                  },
-                  icon: Icon(Icons.leaderboard, size: 20),
-                  label: Text('ランキング'),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: Size(150, 50),
-                  ),
-                ),
-                SizedBox(width: 20),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => DashboardScreen(
-                              camera: camera, userId: userId)),
-                    );
-                  },
-                  icon: Icon(Icons.edit, size: 20),
-                  label: Text('目標入力ボタン'),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: Size(150, 50),
-                  ),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
+      );
+    }
+    return Center(
+      child: Text(
+        '今日の目標はありません',
+        style: TextStyle(fontSize: 20),
       ),
     );
+  }
+}
+
+class BackgroundPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.orange.shade100
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    path.moveTo(0, size.height * 0.3);
+    path.quadraticBezierTo(size.width * 0.5, size.height * 0.4, size.width, size.height * 0.3);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    canvas.drawPath(path, paint);
+
+    paint.color = Colors.orange.shade200;
+
+    path.reset();
+    path.moveTo(0, size.height * 0.5);
+    path.quadraticBezierTo(size.width * 0.5, size.height * 0.6, size.width, size.height * 0.5);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
   }
 }

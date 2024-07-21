@@ -41,9 +41,7 @@ class GoalCard extends StatelessWidget {
             Text('締切: ${DateFormat('kk:mm').format(deadline)}まで'),
           ],
         ),
-        onTap: isPastDeadline || isAchieved
-            ? null
-            : () {
+        onTap: isAchieved ? null : () {
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -51,6 +49,7 @@ class GoalCard extends StatelessWidget {
                 camera: camera,
                 userId: userId,
                 goal: goal,
+                isPastDeadline: isPastDeadline,
               ),
             ),
           );

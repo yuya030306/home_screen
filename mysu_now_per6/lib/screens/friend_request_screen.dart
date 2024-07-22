@@ -50,7 +50,7 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
     String friendUsername = _controller.text;
     if (friendUsername.isEmpty) {
       setState(() {
-        _infoText = "ユーザー名を入力してください。";
+        _infoText = "ユーザ名を入力してください。";
       });
       return;
     }
@@ -184,8 +184,8 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
               child: TextFormField(
                 controller: _controller,
                 decoration: InputDecoration(
-                  labelText: "ユーザー名",
-                  hintText: "ユーザー名を入力してください",
+                  labelText: "ユーザ名",
+                  hintText: "ユーザ名を入力してください",
                   prefixIcon: Icon(Icons.person),
                   fillColor: Colors.orange[50],
                   filled: true,

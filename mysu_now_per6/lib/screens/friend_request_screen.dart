@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'pending_requests_screen.dart';
 
 class FriendRequestScreen extends StatefulWidget {
@@ -15,16 +16,44 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   TextEditingController _controller = TextEditingController();
   int pendingRequestsCount = 0;
+  String _infoText = '';
+  bool _isConnected = true;
 
   @override
   void initState() {
     super.initState();
+    _checkConnectivity();
     _getPendingRequestsCount();
+    Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
+      setState(() {
+        _isConnected = result != ConnectivityResult.none;
+      });
+    });
+  }
+
+  Future<void> _checkConnectivity() async {
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    setState(() {
+      _isConnected = connectivityResult != ConnectivityResult.none;
+    });
   }
 
   Future<void> _sendFriendRequest() async {
+    await _checkConnectivity();
+    if (!_isConnected) {
+      setState(() {
+        _infoText = "インターネット接続がありません。接続を確認してください。";
+      });
+      return;
+    }
+
     String friendUsername = _controller.text;
-    if (friendUsername.isEmpty) return;
+    if (friendUsername.isEmpty) {
+      setState(() {
+        _infoText = "ユーザー名を入力してください。";
+      });
+      return;
+    }
 
     QuerySnapshot query = await _firestore
         .collection('users')
@@ -32,9 +61,9 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
         .get();
 
     if (query.docs.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('ユーザが見つかりませんでした')),
-      );
+      setState(() {
+        _infoText = 'ユーザが見つかりませんでした';
+      });
       return;
     }
 
@@ -46,9 +75,9 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
     Map<String, dynamic>? userData = userDoc.data() as Map<String, dynamic>?;
     List friends = userData?['friends'] ?? [];
     if (friends.contains(friendId)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('既にフレンドです')),
-      );
+      setState(() {
+        _infoText = '既にフレンドです';
+      });
       return;
     }
 
@@ -60,9 +89,9 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
         .where('status', isEqualTo: 'pending')
         .get();
     if (existingRequest.docs.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('既にフレンド申請中です')),
-      );
+      setState(() {
+        _infoText = '既にフレンド申請中です';
+      });
       return;
     }
 
@@ -88,9 +117,9 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
         'friends': FieldValue.arrayUnion([widget.userId]),
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('フレンドになりました')),
-      );
+      setState(() {
+        _infoText = 'フレンドになりました';
+      });
 
       _controller.clear();
       _getPendingRequestsCount();
@@ -103,9 +132,9 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
       'status': 'pending',
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('フレンド申請を送信しました')),
-    );
+    setState(() {
+      _infoText = 'フレンド申請を送信しました';
+    });
 
     _controller.clear();
     _getPendingRequestsCount();
@@ -118,8 +147,11 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
         .where('status', isEqualTo: 'pending')
         .get();
 
+    // 重複するフレンド申請を排除してカウント
+    Set<String> uniqueUserIds =
+        query.docs.map((doc) => doc['from'] as String).toSet();
     setState(() {
-      pendingRequestsCount = query.docs.length;
+      pendingRequestsCount = uniqueUserIds.length;
     });
   }
 
@@ -178,7 +210,13 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
               width: 250,
               height: 50,
               child: ElevatedButton(
-                onPressed: _sendFriendRequest,
+                onPressed: _isConnected
+                    ? _sendFriendRequest
+                    : () {
+                        setState(() {
+                          _infoText = "インターネット接続がありません。確認してください。";
+                        });
+                      },
                 child: Text(
                   'フレンド申請を送信',
                   style: TextStyle(
@@ -187,7 +225,7 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
+                  backgroundColor: _isConnected ? Colors.orange : Colors.grey,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -195,6 +233,14 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
                 ),
               ),
             ),
+            if (_infoText.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 10.0),
+                child: Text(
+                  _infoText,
+                  style: TextStyle(color: Colors.red, fontSize: 16.0),
+                ),
+              ),
             SizedBox(height: 100.0),
             ElevatedButton.icon(
               icon: Icon(

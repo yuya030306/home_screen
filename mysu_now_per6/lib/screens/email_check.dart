@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:camera/camera.dart';
 import 'home_screen.dart';
 
@@ -9,15 +10,17 @@ class EmailCheck extends StatefulWidget {
   final int from;
   final CameraDescription camera;
   final String userId;
+  final String username; // 追加
 
-  EmailCheck(
-      {Key? key,
-      required this.email,
-      required this.pswd,
-      required this.from,
-      required this.camera,
-      required this.userId}) // コンストラクタに camera を追加
-      : super(key: key);
+  EmailCheck({
+    Key? key,
+    required this.email,
+    required this.pswd,
+    required this.from,
+    required this.camera,
+    required this.userId,
+    required this.username, // 追加
+  }) : super(key: key);
 
   @override
   _EmailCheckState createState() => _EmailCheckState();
@@ -25,6 +28,7 @@ class EmailCheck extends StatefulWidget {
 
 class _EmailCheckState extends State<EmailCheck> {
   final _auth = FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance;
   UserCredential? _result;
   String _nocheckText = '';
   String _sentEmailText = '';
@@ -43,6 +47,16 @@ class _EmailCheckState extends State<EmailCheck> {
     }
 
     return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        title: Text('メール確認'),
+        backgroundColor: Colors.orange,
+      ),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -51,10 +65,18 @@ class _EmailCheckState extends State<EmailCheck> {
               padding: EdgeInsets.fromLTRB(20.0, 0, 20.0, 20.0),
               child: Text(
                 _nocheckText,
-                style: TextStyle(color: Colors.red),
+                style: TextStyle(color: Colors.red, fontSize: 16),
+                textAlign: TextAlign.center,
               ),
             ),
-            Text(_sentEmailText),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
+              child: Text(
+                _sentEmailText,
+                style: TextStyle(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+            ),
             Padding(
               padding: EdgeInsets.fromLTRB(0, 0, 0, 30.0),
               child: ElevatedButton(
@@ -72,10 +94,15 @@ class _EmailCheckState extends State<EmailCheck> {
                 },
                 child: Text(
                   '確認メールを再送信',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey,
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                 ),
               ),
             ),
@@ -87,6 +114,16 @@ class _EmailCheckState extends State<EmailCheck> {
                 );
 
                 if (_result?.user?.emailVerified ?? false) {
+                  await _firestore
+                      .collection('users')
+                      .doc(_result?.user?.uid)
+                      .set({
+                    'username': widget.username,
+                    'email': widget.email,
+                    'friends': [],
+                    'friendRequests': [],
+                  });
+
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -94,7 +131,7 @@ class _EmailCheckState extends State<EmailCheck> {
                         camera: widget.camera,
                         userId: widget.userId,
                         auth: _auth,
-                      ), // 修正: HomeScreen に変更
+                      ),
                     ),
                   );
                 } else {
@@ -106,10 +143,15 @@ class _EmailCheckState extends State<EmailCheck> {
               },
               child: Text(
                 'メール確認完了',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
               ),
             ),
           ],

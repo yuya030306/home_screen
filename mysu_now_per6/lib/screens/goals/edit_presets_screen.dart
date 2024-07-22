@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // 追加
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../theme.dart';
@@ -14,7 +15,9 @@ class _EditPresetsScreenState extends State<EditPresetsScreen> {
   final User? user = FirebaseAuth.instance.currentUser;
 
   void _addPreset() async {
-    if (_goalController.text.isNotEmpty && _unitController.text.isNotEmpty && user != null) {
+    if (_goalController.text.isNotEmpty &&
+        _unitController.text.isNotEmpty &&
+        user != null) {
       FirebaseFirestore.instance.collection('presetGoals').add({
         'goal': _goalController.text,
         'unit': _unitController.text,
@@ -79,35 +82,49 @@ class _EditPresetsScreenState extends State<EditPresetsScreen> {
                   if (!snapshot.hasData) {
                     return Center(child: CircularProgressIndicator());
                   }
-                  var presets = snapshot.data!.docs.map((doc) => {
-                    'id': doc.id,
-                    'goal': (doc.data() as Map<String, dynamic>)['goal']?.toString() ?? '',
-                    'unit': (doc.data() as Map<String, dynamic>)['unit']?.toString() ?? '',
-                  }).toList();
+                  var presets = snapshot.data!.docs
+                      .map((doc) => {
+                            'id': doc.id,
+                            'goal': (doc.data() as Map<String, dynamic>)['goal']
+                                    ?.toString() ??
+                                '',
+                            'unit': (doc.data() as Map<String, dynamic>)['unit']
+                                    ?.toString() ??
+                                '',
+                          })
+                      .toList();
                   return ListView.builder(
                     itemCount: presets.length,
                     itemBuilder: (context, index) {
                       return Card(
-                        margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                        margin: EdgeInsets.symmetric(
+                            vertical: 8.0, horizontal: 16.0),
                         child: ListTile(
                           leading: Icon(Icons.edit, color: Colors.blue),
                           title: TextFormField(
                             initialValue: presets[index]['goal'] ?? '',
                             decoration: InputDecoration(labelText: '目標'),
                             onChanged: (value) {
-                              _updatePreset(presets[index]['id']!, 'goal', value);
+                              _updatePreset(
+                                  presets[index]['id']!, 'goal', value);
                             },
                           ),
                           subtitle: TextFormField(
                             initialValue: presets[index]['unit'] ?? '',
                             decoration: InputDecoration(labelText: '単位'),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r'[^\d]')), // 数字を除外
+                            ],
                             onChanged: (value) {
-                              _updatePreset(presets[index]['id']!, 'unit', value);
+                              _updatePreset(
+                                  presets[index]['id']!, 'unit', value);
                             },
                           ),
                           trailing: IconButton(
                             icon: Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => _deletePreset(presets[index]['id']!),
+                            onPressed: () =>
+                                _deletePreset(presets[index]['id']!),
                           ),
                         ),
                       );
@@ -127,6 +144,10 @@ class _EditPresetsScreenState extends State<EditPresetsScreen> {
                   TextField(
                     controller: _unitController,
                     decoration: InputDecoration(labelText: '単位'),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                          RegExp(r'[^\d]')), // 数字を除外
+                    ],
                   ),
                   SizedBox(height: 10),
                   ElevatedButton(

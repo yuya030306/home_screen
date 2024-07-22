@@ -37,7 +37,7 @@ class _LoginState extends State<Login> {
       });
       return;
     }
-    //d
+
     try {
       _result = await _auth.signInWithEmailAndPassword(
         email: _loginEmail,
@@ -45,7 +45,7 @@ class _LoginState extends State<Login> {
       );
       _user = _result?.user;
 
-      if (_user?.emailVerified ?? false) {
+      if (_user?.emailVerified ?? true) {
         final alarmManager = Provider.of<AlarmManager>(context, listen: false);
         await alarmManager.resetAlarm();
 
@@ -69,18 +69,21 @@ class _LoginState extends State<Login> {
               from: 2,
               camera: widget.camera,
               userId: _user!.uid,
+              username: "", // EmailCheck画面でFirestoreに保存するためのユーザー名を追加します。
             ),
           ),
         );
       }
     } catch (e) {
-      setState(() {
-        String errorCode = (e as FirebaseAuthException).code;
-        String errorMessage = e.message ?? "No message available";
-        print("Error Code: $errorCode");
-        print("Error Message: $errorMessage");
-        _infoText = authError.loginErrorMsg(errorCode);
-      });
+      if (e is FirebaseAuthException) {
+        setState(() {
+          _infoText = authError.loginErrorMsg(e.code);
+        });
+      } else {
+        setState(() {
+          _infoText = "不明なエラーが発生しました。";
+        });
+      }
     }
   }
 
@@ -93,9 +96,15 @@ class _LoginState extends State<Login> {
         ),
       );
     } catch (e) {
-      setState(() {
-        _infoText = authError.loginErrorMsg((e as FirebaseAuthException).code);
-      });
+      if (e is FirebaseAuthException) {
+        setState(() {
+          _infoText = authError.loginErrorMsg(e.code);
+        });
+      } else {
+        setState(() {
+          _infoText = "不明なエラーが発生しました。";
+        });
+      }
     }
   }
 

@@ -14,7 +14,9 @@ class _EditPresetsScreenState extends State<EditPresetsScreen> {
   final User? user = FirebaseAuth.instance.currentUser;
 
   Future<void> _addPreset() async {
-    if (_goalController.text.isNotEmpty && _unitController.text.isNotEmpty && user != null) {
+    if (_goalController.text.isNotEmpty &&
+        _unitController.text.isNotEmpty &&
+        user != null) {
       bool isDuplicate = await _checkDuplicatePreset(_goalController.text);
       if (isDuplicate) {
         _showErrorDialog('そのプリセット名は既に登録されています。');
@@ -132,17 +134,24 @@ class _EditPresetsScreenState extends State<EditPresetsScreen> {
                   if (!snapshot.hasData) {
                     return Center(child: CircularProgressIndicator());
                   }
-                  var presets = snapshot.data!.docs.map((doc) => {
-                    'id': doc.id,
-                    'goal': (doc.data() as Map<String, dynamic>)['goal']?.toString() ?? '',
-                    'unit': (doc.data() as Map<String, dynamic>)['unit']?.toString() ?? '',
-                  }).toList();
+                  var presets = snapshot.data!.docs
+                      .map((doc) => {
+                            'id': doc.id,
+                            'goal': (doc.data() as Map<String, dynamic>)['goal']
+                                    ?.toString() ??
+                                '',
+                            'unit': (doc.data() as Map<String, dynamic>)['unit']
+                                    ?.toString() ??
+                                '',
+                          })
+                      .toList();
                   return ListView.builder(
                     itemCount: presets.length,
                     itemBuilder: (context, index) {
                       var preset = presets[index];
                       return Card(
-                        margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                        margin: EdgeInsets.symmetric(
+                            vertical: 8.0, horizontal: 16.0),
                         child: ListTile(
                           leading: Icon(Icons.edit, color: Colors.blue),
                           title: TextFormField(

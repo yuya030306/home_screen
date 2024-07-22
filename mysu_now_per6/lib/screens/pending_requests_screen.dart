@@ -12,7 +12,7 @@ class PendingRequestsScreen extends StatefulWidget {
 
 class _PendingRequestsScreenState extends State<PendingRequestsScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  int pendingRequestsCount = 0;
+  List<DocumentSnapshot> requests = [];
 
   Future<void> _acceptRequest(String requestId, String fromUserId) async {
     await _firestore.collection('friend_requests').doc(requestId).update({
@@ -27,7 +27,7 @@ class _PendingRequestsScreenState extends State<PendingRequestsScreen> {
       'friends': FieldValue.arrayUnion([widget.userId]),
     });
 
-    await _getPendingRequestsCount();
+    await _removePendingRequests(fromUserId);
   }
 
   Future<void> _rejectRequest(String requestId) async {
@@ -35,18 +35,25 @@ class _PendingRequestsScreenState extends State<PendingRequestsScreen> {
       'status': 'rejected',
     });
 
-    await _getPendingRequestsCount();
+    await _removePendingRequests(requestId);
   }
 
-  Future<void> _getPendingRequestsCount() async {
-    QuerySnapshot query = await _firestore
+  Future<void> _removePendingRequests(String fromUserId) async {
+    var batch = _firestore.batch();
+    var querySnapshot = await _firestore
         .collection('friend_requests')
+        .where('from', isEqualTo: fromUserId)
         .where('to', isEqualTo: widget.userId)
         .where('status', isEqualTo: 'pending')
         .get();
 
+    for (var doc in querySnapshot.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+
     setState(() {
-      pendingRequestsCount = query.docs.length;
+      requests.removeWhere((request) => request['from'] == fromUserId);
     });
   }
 
@@ -54,12 +61,6 @@ class _PendingRequestsScreenState extends State<PendingRequestsScreen> {
     final docSnapshot = await _firestore.collection('users').doc(userId).get();
     return docSnapshot.data() ??
         {'username': 'Unknown', 'avatarColor': '000000'};
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _getPendingRequestsCount();
   }
 
   @override
@@ -86,7 +87,13 @@ class _PendingRequestsScreenState extends State<PendingRequestsScreen> {
             return Center(child: CircularProgressIndicator());
           }
 
-          final requests = snapshot.data!.docs;
+          requests = snapshot.data!.docs;
+          // 重複するフレンド申請を排除
+          Map<String, DocumentSnapshot> uniqueRequests = {};
+          for (var request in requests) {
+            uniqueRequests[request['from']] = request;
+          }
+          requests = uniqueRequests.values.toList();
 
           return ListView.builder(
             itemCount: requests.length,

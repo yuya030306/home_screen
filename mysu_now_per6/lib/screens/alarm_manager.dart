@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
-import 'alarm_setting_screen.dart';
 
 class AlarmManager extends ChangeNotifier {
   TimeOfDay? _selectedTime;
   String? _alarmTimeString;
+  String? _selectedSound; // アラーム音の追加
   Timer? _timer;
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isAlarmRinging = false;
+  int _playCount = 0; // 再生回数をカウント
 
   AlarmManager() {
     _loadAlarmTime();
@@ -22,6 +23,7 @@ class AlarmManager extends ChangeNotifier {
       minute: prefs.getInt('selectedMinute') ?? 0,
     );
     _alarmTimeString = prefs.getString('alarmTimeString');
+    _selectedSound = prefs.getString('selectedSound'); // アラーム音をロード
     if (_alarmTimeString != null) {
       _startAlarmTimer();
     }
@@ -36,6 +38,13 @@ class AlarmManager extends ChangeNotifier {
     _selectedTime = TimeOfDay(hour: hour, minute: minute);
     _alarmTimeString = alarmTimeString;
     _startAlarmTimer();
+  }
+
+  Future<void> _saveAlarmSound(String sound) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('selectedSound', sound);
+    _selectedSound = sound;
+    notifyListeners();
   }
 
   void _startAlarmTimer() {
@@ -63,13 +72,26 @@ class AlarmManager extends ChangeNotifier {
   }
 
   void _playAlarm() async {
-    await _audioPlayer.setReleaseMode(ReleaseMode.loop);
-    await _audioPlayer.play(AssetSource('alarm_sound.mp3'));
+    String alarmSound = 'alarm_sound_A.mp3'; // デフォルトのアラーム音
+    if (_selectedSound != null) {
+      alarmSound = 'alarm_sound_$_selectedSound.mp3'; // 選択されたアラーム音
+    }
+    await _audioPlayer.setReleaseMode(ReleaseMode.stop);
+    _audioPlayer.onPlayerComplete.listen((event) async {
+      _playCount++;
+      if (_playCount < 20) {
+        await _audioPlayer.play(AssetSource(alarmSound));
+      } else {
+        stopAlarm();
+      }
+    });
+    await _audioPlayer.play(AssetSource(alarmSound));
   }
 
   void stopAlarm() {
     _audioPlayer.stop();
     _isAlarmRinging = false;
+    _playCount = 0;
     notifyListeners();
   }
 
@@ -81,10 +103,16 @@ class AlarmManager extends ChangeNotifier {
   }
 
   String? get alarmTimeString => _alarmTimeString;
+  String? get alarmSound => _selectedSound; // アラーム音のgetter
   bool get isAlarmRinging => _isAlarmRinging;
 
   void setAlarm(int hour, int minute, String alarmTimeString) {
     _saveAlarmTime(hour, minute, alarmTimeString);
+    notifyListeners();
+  }
+
+  void setAlarmSound(String sound) {
+    _saveAlarmSound(sound);
     notifyListeners();
   }
 
@@ -93,8 +121,10 @@ class AlarmManager extends ChangeNotifier {
     await prefs.remove('selectedHour');
     await prefs.remove('selectedMinute');
     await prefs.remove('alarmTimeString');
+    await prefs.remove('selectedSound'); // アラーム音の削除
     _selectedTime = null;
     _alarmTimeString = null;
+    _selectedSound = null; // アラーム音のリセット
     _timer?.cancel();
     notifyListeners();
   }

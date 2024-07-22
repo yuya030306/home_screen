@@ -131,7 +131,7 @@ class _RankingScreenState extends State<RankingScreen> {
 
     try {
       QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('goals')
+          .collection('records')
           .where('goal', isEqualTo: _selectedCategory)
           .get();
 

@@ -350,7 +350,6 @@ class _GraphScreenState extends State<GraphScreen> {
             ? _weeklyData.map((e) => e.value).reduce((a, b) => a > b ? a : b) +
                 10
             : 10,
-        title: AxisTitle(text: _goalUnit),
         labelFormat: '{value}$_goalUnit',
       ),
       series: <ChartSeries>[
@@ -376,7 +375,6 @@ class _GraphScreenState extends State<GraphScreen> {
             ? _monthlyData.map((e) => e.value).reduce((a, b) => a > b ? a : b) +
                 10
             : 10,
-        title: AxisTitle(text: _goalUnit),
         labelFormat: '{value}$_goalUnit',
       ),
       series: <ChartSeries>[

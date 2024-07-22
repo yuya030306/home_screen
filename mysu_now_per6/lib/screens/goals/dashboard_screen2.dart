@@ -47,6 +47,12 @@ class _DashboardScreenState extends State<DashboardScreen2> {
       home: Scaffold(
         appBar: AppBar(
           title: Text('達成した目標を選択'),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
         ),
         body: Column(
           children: [

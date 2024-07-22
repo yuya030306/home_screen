@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:firebase_auth/firebase_auth.dart';
@@ -22,9 +23,13 @@ class _SetGoalValueScreenState extends State<SetGoalValueScreen> {
   TimeOfDay? _selectedTime = TimeOfDay.now();
 
   void _addGoal() {
-    if (widget.selectedPreset != null && widget.selectedUnit != null && _valueController.text.isNotEmpty && _selectedTime != null) {
+    if (widget.selectedPreset != null &&
+        widget.selectedUnit != null &&
+        _valueController.text.isNotEmpty &&
+        _selectedTime != null) {
       final DateTime now = DateTime.now();
-      final DateTime deadline = DateTime(now.year, now.month, now.day, _selectedTime!.hour, _selectedTime!.minute);
+      final DateTime deadline = DateTime(now.year, now.month, now.day,
+          _selectedTime!.hour, _selectedTime!.minute);
 
       if (deadline.isBefore(now)) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -40,7 +45,11 @@ class _SetGoalValueScreenState extends State<SetGoalValueScreen> {
         'deadline': deadline,
         'userId': FirebaseAuth.instance.currentUser?.uid,
       }).then((documentReference) {
-        scheduleNotification(documentReference.id, widget.selectedPreset!, deadline);
+        scheduleNotification(
+            documentReference.id, widget.selectedPreset!, deadline);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('保存されました')),
+        );
       });
 
       Navigator.of(context).pop();
@@ -58,6 +67,12 @@ class _SetGoalValueScreenState extends State<SetGoalValueScreen> {
       home: Scaffold(
         appBar: AppBar(
           title: const Text('目標値と締切を設定'),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
         ),
         body: SingleChildScrollView(
           child: Padding(
@@ -82,6 +97,9 @@ class _SetGoalValueScreenState extends State<SetGoalValueScreen> {
                     border: OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^[1-9]\d*')),
+                  ],
                 ),
                 SizedBox(height: 20),
                 Text(
@@ -90,12 +108,11 @@ class _SetGoalValueScreenState extends State<SetGoalValueScreen> {
                 ),
                 SizedBox(
                   height: 200,
-                  child: CupertinoTimerPicker(
-                    mode: CupertinoTimerPickerMode.hm,
-                    initialTimerDuration: Duration(hours: _selectedTime!.hour, minutes: _selectedTime!.minute),
-                    onTimerDurationChanged: (Duration duration) {
+                  child: CustomTimerPicker(
+                    initialTime: _selectedTime!,
+                    onTimeChanged: (newTime) {
                       setState(() {
-                        _selectedTime = TimeOfDay(hour: duration.inHours, minute: duration.inMinutes % 60);
+                        _selectedTime = newTime;
                       });
                     },
                   ),
@@ -108,6 +125,7 @@ class _SetGoalValueScreenState extends State<SetGoalValueScreen> {
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       textStyle: TextStyle(fontSize: 16),
+                      backgroundColor: Colors.orange,
                     ),
                   ),
                 ),
@@ -119,25 +137,96 @@ class _SetGoalValueScreenState extends State<SetGoalValueScreen> {
     );
   }
 
-  void scheduleNotification(String goalId, String goal, DateTime scheduledTime) async {
+  void scheduleNotification(
+      String goalId, String goal, DateTime scheduledTime) async {
     var androidDetails = const AndroidNotificationDetails(
       'high_importance_channel',
       'High Importance Notifications',
       channelDescription: 'This channel is used for important notifications.',
       importance: Importance.high,
     );
-    var generalNotificationDetails = NotificationDetails(android: androidDetails);
+    var generalNotificationDetails =
+    NotificationDetails(android: androidDetails);
 
-    print('Scheduled time: $scheduledTime');
+    final notificationTime = scheduledTime.subtract(Duration(minutes: 5));
 
     await flutterLocalNotificationsPlugin.zonedSchedule(
       0,
       'Goal Reminder',
-      'Time to achieve your goal: $goal',
-      tz.TZDateTime.from(scheduledTime, tz.local),
+      '5分後に目標: $goal の締切です',
+      tz.TZDateTime.from(notificationTime, tz.local),
       generalNotificationDetails,
       androidAllowWhileIdle: true,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      uiLocalNotificationDateInterpretation:
+      UILocalNotificationDateInterpretation.absoluteTime,
+    );
+  }
+}
+
+class CustomTimerPicker extends StatefulWidget {
+  final Function(TimeOfDay) onTimeChanged;
+  final TimeOfDay initialTime;
+
+  CustomTimerPicker({required this.onTimeChanged, required this.initialTime});
+
+  @override
+  _CustomTimerPickerState createState() => _CustomTimerPickerState();
+}
+
+class _CustomTimerPickerState extends State<CustomTimerPicker> {
+  late int selectedHour;
+  late int selectedMinute;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedHour = widget.initialTime.hour;
+    selectedMinute = widget.initialTime.minute;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Expanded(
+          child: CupertinoPicker(
+            scrollController:
+            FixedExtentScrollController(initialItem: selectedHour),
+            itemExtent: 32.0,
+            onSelectedItemChanged: (int index) {
+              setState(() {
+                selectedHour = index;
+                widget.onTimeChanged(
+                    TimeOfDay(hour: selectedHour, minute: selectedMinute));
+              });
+            },
+            children: List<Widget>.generate(24, (int index) {
+              return Center(
+                  child: Text('${index.toString().padLeft(2, '0')} 時'));
+            }),
+          ),
+        ),
+        SizedBox(width: 8),
+        Expanded(
+          child: CupertinoPicker(
+            scrollController:
+            FixedExtentScrollController(initialItem: selectedMinute),
+            itemExtent: 32.0,
+            onSelectedItemChanged: (int index) {
+              setState(() {
+                selectedMinute = index;
+                widget.onTimeChanged(
+                    TimeOfDay(hour: selectedHour, minute: selectedMinute));
+              });
+            },
+            children: List<Widget>.generate(60, (int index) {
+              return Center(
+                  child: Text('${index.toString().padLeft(2, '0')} 分'));
+            }),
+          ),
+        ),
+      ],
     );
   }
 }

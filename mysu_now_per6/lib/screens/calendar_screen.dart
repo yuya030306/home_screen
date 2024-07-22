@@ -17,18 +17,104 @@ class CalendarScreen extends StatefulWidget {
 
 class FullScreenImageScreen extends StatelessWidget {
   final String imageUrl;
+  final List<String>? goalsForDay;
 
-  const FullScreenImageScreen({Key? key, required this.imageUrl})
-      : super(key: key);
+  const FullScreenImageScreen({
+    Key? key,
+    required this.imageUrl,
+    required this.goalsForDay,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final uniqueGoals = goalsForDay != null ? goalsForDay!.toSet().toList() : null;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: GestureDetector(
         onTap: () => Navigator.pop(context),
         child: Center(
-          child: Image.network(imageUrl, fit: BoxFit.contain),
+          child: Stack(
+            children: [
+              Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                width: MediaQuery.of(context).size.width,
+                height: MediaQuery.of(context).size.height,
+              ),
+              if (uniqueGoals != null && uniqueGoals.isNotEmpty)
+                Positioned(
+                  bottom: 20,
+                  left: 20,
+                  right: 20,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.8),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '達成した目標',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        ...uniqueGoals.map((goal) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Text(
+                            '• $goal',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.black,
+                            ),
+                          ),
+                        )),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Positioned(
+                  bottom: 20,
+                  left: 20,
+                  right: 20,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.8),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'この日の記録は取得できませんでした',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.black,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -42,7 +128,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   bool _isNetworkError = false;
   CalendarFormat _calendarFormat = CalendarFormat.month;
   int _currentImageIndex = 0;
-  String? _goalForSelectedDay;
+  List <String>? _goalForSelectedDay;
   List<_RecordData> _monthlyData = [];
   DateTime _currentMonth = DateTime.now();
 
@@ -50,7 +136,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   void initState() {
     super.initState();
     _fetchImages();
-    _fetchGoals();
     _fetchGoalForDay(_selectedDay);
   }
 
@@ -80,48 +165,28 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
-  Future<void> _fetchGoals() async {
-    try {
-      final QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('records')
-          .where('userId', isEqualTo: widget.userId)
-          .get();
-
-      final Map<String, String> goals = {};
-      for (var doc in snapshot.docs) {
-        final data = doc.data() as Map<String, dynamic>;
-        final Timestamp timestamp = data['timestamp'];
-        final String goal = data['goal'];
-        final String formattedDate =
-        DateFormat('yyyyMMdd').format(timestamp.toDate());
-        goals[formattedDate] = goal;
-      }
-
-      setState(() {
-        _goals = goals;
-      });
-    } catch (e) {
-      setState(() {
-        _isNetworkError = true;
-      });
-    }
-  }
-
   Future<void> _fetchGoalForDay(DateTime day) async {
     try {
-      final String formattedDate = DateFormat('yyyyMMdd').format(day);
+      final DateTime startOfDay = DateTime(day.year, day.month, day.day);
+      final DateTime endOfDay = startOfDay.add(Duration(days: 1)).subtract(Duration(seconds: 1));
+
       final QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('records')
           .where('userId', isEqualTo: widget.userId)
-          .where('timestamp', isEqualTo: formattedDate)
+          .where('timestamp', isGreaterThanOrEqualTo: startOfDay)
+          .where('timestamp', isLessThanOrEqualTo: endOfDay)
           .get();
 
       if (snapshot.docs.isNotEmpty) {
-        final data = snapshot.docs.first.data() as Map<String, dynamic>;
-        final String goal = data['goal'];
+        final List<String> goals = [];
+        for (var doc in snapshot.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+          final String goal = data['goal'];
+          goals.add(goal);
+        }
 
         setState(() {
-          _goalForSelectedDay = goal;
+          _goalForSelectedDay = goals.isEmpty ? null : goals;
         });
       } else {
         setState(() {
@@ -141,7 +206,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
         .where((image) => image['name']!.contains(formattedDay))
         .toList();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -183,6 +247,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     }
                   });
                   _fetchGoalForDay(selectedDay);
+                  print('Selected day: $selectedDay');
+
                 },
                 headerStyle: HeaderStyle(
                   formatButtonTextStyle:
@@ -362,9 +428,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => FullScreenImageScreen(
-                                  imageUrl:
-                                  imagesForSelectedDay[_currentImageIndex]
-                                  ['url']!,
+                                  imageUrl: imagesForSelectedDay[_currentImageIndex]['url']!,
+                                  goalsForDay: _goalForSelectedDay,
                                 ),
                               ),
                             );
@@ -380,8 +445,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(12.0),
                               child: Image.network(
-                                imagesForSelectedDay[_currentImageIndex]
-                                ['url']!,
+                                imagesForSelectedDay[_currentImageIndex]['url']!,
                                 fit: BoxFit.cover,
                               ),
                             ),
@@ -413,19 +477,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 8),
+                    SizedBox(height: 7),
                     Text(
                       '${DateFormat('yyyy年MM月dd日').format(_selectedDay)} - ${_currentImageIndex + 1}枚目',
                       style: TextStyle(fontSize: 16, color: Colors.black),
                     ),
-                    if (_goalForSelectedDay != null)
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          'Goal: $_goalForSelectedDay',
-                          style: TextStyle(fontSize: 16, color: Colors.black),
-                        ),
-                      ),
                   ],
                 ),
               ),

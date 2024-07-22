@@ -108,7 +108,7 @@ class _AlarmPageState extends State<AlarmPage> {
                     child: Text(
                       _alarmTimeString ?? 'アラームをセットしてください',
                       style: TextStyle(
-                        fontSize: 36, // フォントサイズを大きく
+                        fontSize: 28, // フォントサイズを大きく
                         color: Colors.black54,
                         fontFamily: 'Digital-7', // デジタル時計風フォント
                         letterSpacing: 3.0,

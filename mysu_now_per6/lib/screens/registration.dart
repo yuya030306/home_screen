@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:camera/camera.dart'; // CameraDescription をインポート
+import 'package:camera/camera.dart';
 import 'authentication_error.dart';
 import 'email_check.dart';
-import 'home_screen.dart'; // HomeScreen をインポート
+import 'home_screen.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 class Registration extends StatefulWidget {
@@ -52,8 +52,7 @@ class _RegistrationState extends State<Registration> {
               mainAxisSize: MainAxisSize.max,
               children: <Widget>[
                 Padding(
-                  padding:
-                      EdgeInsets.only(bottom: 50.0, top: 50.0), // 画像の下に余白を追加
+                  padding: EdgeInsets.only(bottom: 50.0, top: 50.0),
                   child: Image(
                     image: AssetImage('images/sample.jpg'),
                     width: 110.0,
@@ -66,19 +65,18 @@ class _RegistrationState extends State<Registration> {
                     decoration: InputDecoration(
                       labelText: "ユーザーネーム",
                       hintText: "例: username123",
-                      prefixIcon: Icon(Icons.person), // アイコンを追加
+                      prefixIcon: Icon(Icons.person),
                       fillColor: Colors.orange[50],
                       filled: true,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(40.0), // 角丸にする
+                        borderRadius: BorderRadius.circular(40.0),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                            color: Colors.orange, width: 2.0), // フォーカス時の色
+                        borderSide:
+                            BorderSide(color: Colors.orange, width: 2.0),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                            color: Colors.grey, width: 1.0), // 通常時の色と幅
+                        borderSide: BorderSide(color: Colors.grey, width: 1.0),
                       ),
                       labelStyle: TextStyle(
                         color: Colors.orange,
@@ -96,19 +94,18 @@ class _RegistrationState extends State<Registration> {
                     decoration: InputDecoration(
                       labelText: "メールアドレス",
                       hintText: "例: user@example.com",
-                      prefixIcon: Icon(Icons.email), // アイコンを追加
+                      prefixIcon: Icon(Icons.email),
                       fillColor: Colors.orange[50],
                       filled: true,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(40.0), // 角丸にする
+                        borderRadius: BorderRadius.circular(40.0),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                            color: Colors.orange, width: 2.0), // フォーカス時の色
+                        borderSide:
+                            BorderSide(color: Colors.orange, width: 2.0),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                            color: Colors.grey, width: 1.0), // 通常時の色と幅
+                        borderSide: BorderSide(color: Colors.grey, width: 1.0),
                       ),
                       labelStyle: TextStyle(
                         color: Colors.orange,
@@ -192,68 +189,8 @@ class _RegistrationState extends State<Registration> {
                         return;
                       }
                       if (_pswdOK) {
-                        try {
-                          // ユーザーネームの重複確認
-                          final usernameSnapshot = await _firestore
-                              .collection('users')
-                              .where('username', isEqualTo: _newUsername)
-                              .get();
-                          if (usernameSnapshot.docs.isNotEmpty) {
-                            setState(() {
-                              _infoText = 'このユーザーネームは既に使用されています。';
-                            });
-                            return;
-                          }
-
-                          // メールアドレスの重複確認
-                          final emailSnapshot = await _firestore
-                              .collection('users')
-                              .where('email', isEqualTo: _newEmail)
-                              .get();
-                          if (emailSnapshot.docs.isNotEmpty) {
-                            setState(() {
-                              _infoText = '既に登録済みのメールアドレスです。';
-                            });
-                            return;
-                          }
-
-                          // 一時的にユーザーを作成し、確認メールを送信
-                          _result = await _auth.createUserWithEmailAndPassword(
-                            email: _newEmail,
-                            password: _newPassword,
-                          );
-
-                          _user = _result?.user;
-
-                          if (_user != null) {
-                            await _user?.sendEmailVerification();
-
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => EmailCheck(
-                                  email: _newEmail,
-                                  pswd: _newPassword,
-                                  from: 1,
-                                  camera: widget.camera,
-                                  userId: widget.userId,
-                                  username: _newUsername,
-                                ),
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          setState(() {
-                            if ((e as FirebaseAuthException).code ==
-                                'invalid-email') {
-                              _infoText = '正しいメールアドレスを入力してください。';
-                            } else if (e.code == 'network-request-failed') {
-                              _infoText = "インターネット接続がありません。接続を確認してください。";
-                            } else {
-                              _infoText = authError.registerErrorMsg(e.code);
-                            }
-                          });
-                        }
+                        // 非同期処理を含む関数を呼び出す
+                        await _registerUser();
                       } else {
                         setState(() {
                           _infoText = 'パスワードは6文字以上です。';
@@ -282,5 +219,86 @@ class _RegistrationState extends State<Registration> {
         ),
       ),
     );
+  }
+
+  Future<void> _registerUser() async {
+    try {
+      // Firestoreに既存のユーザーを確認
+      final querySnapshot = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: _newEmail)
+          .get();
+      if (querySnapshot.docs.isNotEmpty) {
+        setState(() {
+          _infoText = '既に登録済みのメールアドレスです。';
+        });
+        return;
+      }
+
+      // 認証用のユーザーを作成
+      _result = await _auth.createUserWithEmailAndPassword(
+        email: _newEmail,
+        password: _newPassword,
+      );
+
+      _user = _result?.user;
+
+      if (_user != null) {
+        await _user?.sendEmailVerification();
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EmailCheck(
+              email: _newEmail,
+              pswd: _newPassword,
+              from: 1,
+              camera: widget.camera,
+              userId: widget.userId,
+              username: _newUsername,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() async {
+        if (e is FirebaseAuthException) {
+          if (e.code == 'email-already-in-use') {
+            // Firestoreに確認済みのメールアドレスをチェック
+            final querySnapshot = await _firestore
+                .collection('users')
+                .where('email', isEqualTo: _newEmail)
+                .get();
+            if (querySnapshot.docs.isNotEmpty) {
+              _infoText = '既に登録済みのメールアドレスです。';
+            } else {
+              _infoText = 'メール確認が完了していません。';
+              // ここで再度メール確認画面に遷移
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EmailCheck(
+                    email: _newEmail,
+                    pswd: _newPassword,
+                    from: 1,
+                    camera: widget.camera,
+                    userId: widget.userId,
+                    username: _newUsername,
+                  ),
+                ),
+              );
+            }
+          } else if (e.code == 'invalid-email') {
+            _infoText = '正しいメールアドレスを入力してください。';
+          } else if (e.code == 'network-request-failed') {
+            _infoText = "インターネット接続がありません。接続を確認してください。";
+          } else {
+            _infoText = authError.registerErrorMsg(e.code);
+          }
+        } else {
+          _infoText = "不明なエラーが発生しました。";
+        }
+      });
+    }
   }
 }

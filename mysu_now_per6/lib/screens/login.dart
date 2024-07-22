@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:camera/camera.dart';
 import 'authentication_error.dart';
 import 'registration.dart';
@@ -20,6 +21,7 @@ class Login extends StatefulWidget {
 
 class _LoginState extends State<Login> {
   final _auth = FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance; // Firestoreインスタンスを追加
   UserCredential? _result;
   User? _user;
 
@@ -89,6 +91,19 @@ class _LoginState extends State<Login> {
 
   Future<void> _sendPasswordResetEmail() async {
     try {
+      // Firestoreでメールアドレスの存在を確認
+      final querySnapshot = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: _loginEmail)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        setState(() {
+          _infoText = 'そのメールアドレスは登録されていません。';
+        });
+        return;
+      }
+
       await _auth.sendPasswordResetEmail(email: _loginEmail);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

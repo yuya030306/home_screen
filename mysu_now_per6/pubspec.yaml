@@ -50,5 +50,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/alarm_sound.mp3
+    - assets/alarm_sound_A.mp3
+    - assets/alarm_sound_B.mp3
+    - assets/alarm_sound_C.mp3
     - images/sample.jpg

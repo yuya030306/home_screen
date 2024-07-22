@@ -20,6 +20,7 @@ class AlarmPage extends StatefulWidget {
 class _AlarmPageState extends State<AlarmPage> {
   TimeOfDay? _selectedTime;
   String? _alarmTimeString;
+  String? _selectedSound; // 選択されたアラーム音
   int _selectedHour = 0;
   int _selectedMinute = 0;
   bool _isDialogOpen = false;
@@ -56,6 +57,7 @@ class _AlarmPageState extends State<AlarmPage> {
     final alarmManager = Provider.of<AlarmManager>(context, listen: false);
     setState(() {
       _alarmTimeString = alarmManager.alarmTimeString;
+      _selectedSound = alarmManager.alarmSound; // アラーム音をロード
       if (_alarmTimeString != null) {
         final alarmTime = DateFormat('a h:mm').parse(_alarmTimeString!);
         _selectedTime =
@@ -90,47 +92,92 @@ class _AlarmPageState extends State<AlarmPage> {
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
+                Spacer(flex: 1), // 上半分のスペースを確保
                 ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxWidth: 240, // ボタンの幅に合わせる
+                    maxWidth: 300, // ボタンの幅に合わせる
                   ),
                   child: Container(
-                    padding: EdgeInsets.all(10),
+                    padding: EdgeInsets.all(20), // パディングを調整
                     decoration: BoxDecoration(
                       border:
-                          Border.all(color: Colors.orange.shade200, width: 2),
+                          Border.all(color: Colors.orange.shade200, width: 3),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       _alarmTimeString ?? 'アラームをセットしてください',
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 36, // フォントサイズを大きく
                         color: Colors.black54,
                         fontFamily: 'Digital-7', // デジタル時計風フォント
-                        letterSpacing: 2.0,
+                        letterSpacing: 3.0,
                       ),
                       textAlign: TextAlign.center, // テキストを中央揃え
                     ),
                   ),
                 ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _pickTime,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-                    textStyle: TextStyle(fontSize: 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                Spacer(flex: 2), // アラーム時刻とボタンの間にスペースを追加
+                Column(
+                  children: <Widget>[
+                    ElevatedButton(
+                      onPressed: _pickTime,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                        textStyle: TextStyle(fontSize: 20),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: Text(
+                        _alarmTimeString == null ? 'アラームをセット' : 'アラームを編集',
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    _alarmTimeString == null ? 'アラームをセット' : 'アラームを編集',
-                  ),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _changeAlarmSound,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                        textStyle: TextStyle(fontSize: 20),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: Text('アラーム音を変更'),
+                    ),
+                    SizedBox(height: 20),
+                    if (_alarmTimeString != null) // アラームが設定されている場合のみ表示
+                      ElevatedButton(
+                        onPressed: _deleteAlarm,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 30, vertical: 10),
+                          textStyle: TextStyle(fontSize: 20),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        child: Text('アラームを削除'),
+                      ),
+                    if (_selectedSound != null) // アラーム音が設定されている場合のみ表示
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: Text(
+                          '選択されたアラーム音: アラーム音$_selectedSound',
+                          style: TextStyle(fontSize: 18, color: Colors.black54),
+                        ),
+                      ),
+                  ],
                 ),
+                Spacer(flex: 1), // 下部にスペースを確保
               ],
             ),
           ),
@@ -293,6 +340,51 @@ class _AlarmPageState extends State<AlarmPage> {
         );
       },
     );
+  }
+
+  void _deleteAlarm() {
+    final alarmManager = Provider.of<AlarmManager>(context, listen: false);
+    alarmManager.resetAlarm();
+    setState(() {
+      _alarmTimeString = null;
+    });
+  }
+
+  void _changeAlarmSound() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('アラーム音を選択'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: Text('アラーム音A'),
+                onTap: () => _selectAlarmSound('A'),
+              ),
+              ListTile(
+                title: Text('アラーム音B'),
+                onTap: () => _selectAlarmSound('B'),
+              ),
+              ListTile(
+                title: Text('アラーム音C'),
+                onTap: () => _selectAlarmSound('C'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _selectAlarmSound(String sound) {
+    final alarmManager = Provider.of<AlarmManager>(context, listen: false);
+    alarmManager.setAlarmSound(sound);
+    setState(() {
+      _selectedSound = sound;
+    });
+    Navigator.of(context).pop();
   }
 
   String _formatTime(TimeOfDay time) {

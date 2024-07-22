@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
-import 'alarm_setting_screen.dart';
 
 class AlarmManager extends ChangeNotifier {
   TimeOfDay? _selectedTime;
@@ -11,6 +10,7 @@ class AlarmManager extends ChangeNotifier {
   Timer? _timer;
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isAlarmRinging = false;
+  int _playCount = 0; // 再生回数をカウント
 
   AlarmManager() {
     _loadAlarmTime();
@@ -76,13 +76,22 @@ class AlarmManager extends ChangeNotifier {
     if (_selectedSound != null) {
       alarmSound = 'alarm_sound_$_selectedSound.mp3'; // 選択されたアラーム音
     }
-    await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+    await _audioPlayer.setReleaseMode(ReleaseMode.stop);
+    _audioPlayer.onPlayerComplete.listen((event) async {
+      _playCount++;
+      if (_playCount < 20) {
+        await _audioPlayer.play(AssetSource(alarmSound));
+      } else {
+        stopAlarm();
+      }
+    });
     await _audioPlayer.play(AssetSource(alarmSound));
   }
 
   void stopAlarm() {
     _audioPlayer.stop();
     _isAlarmRinging = false;
+    _playCount = 0;
     notifyListeners();
   }
 

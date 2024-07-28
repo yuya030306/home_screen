@@ -71,7 +71,7 @@ class _LoginState extends State<Login> {
               from: 2,
               camera: widget.camera,
               userId: _user!.uid,
-              username: "", // EmailCheck画面でFirestoreに保存するためのユーザー名を追加します。
+              username: "", // EmailCheck画面でFirestoreに保存するためのユーザ名を追加します。
             ),
           ),
         );

@@ -63,7 +63,7 @@ class _RegistrationState extends State<Registration> {
                   padding: EdgeInsets.fromLTRB(25.0, 0, 25.0, 10.0),
                   child: TextFormField(
                     decoration: InputDecoration(
-                      labelText: "ユーザーネーム",
+                      labelText: "ユーザー名",
                       hintText: "例: username123",
                       prefixIcon: Icon(Icons.person),
                       fillColor: Colors.orange[50],

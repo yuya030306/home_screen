@@ -1,0 +1,56 @@
+name: my_new_project
+description: A new Flutter project.
+
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.17.0 <4.0.0"
+
+
+dependencies:
+  flutter:
+    sdk: flutter
+  firebase_core: ^3.1.1
+  firebase_auth: ^5.1.1
+  firebase_storage: ^12.1.0
+  cloud_firestore: ^5.0.2
+  google_sign_in: ^6.2.1
+  camera: ^0.11.0+1
+  path_provider: ^2.0.9
+  intl: ^0.19.0
+  table_calendar: ^3.1.2
+  carousel_slider: ^4.0.0
+  audioplayers: ^6.0.0
+  flutter_local_notifications: ^12.0.4
+  cupertino_icons: ^1.0.6
+  firebase_analytics: 11.1.0
+  mailer: ^6.0.1
+  fl_chart: ^0.68.0
+  syncfusion_flutter_charts: ^20.1.58
+  shared_preferences: ^2.0.13
+  provider: ^6.0.3
+  workmanager: ^0.5.2
+  firebase_messaging: ^15.0.1
+  android_alarm_manager_plus: ^2.0.3
+  timezone: ^0.9.4
+  permission_handler: ^11.3.1
+  android_intent_plus: ^5.0.2
+  connectivity_plus: ^2.3.0
+  salomon_bottom_bar: ^3.0.0
+  event: ^2.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/alarm_sound_A.mp3
+    - assets/alarm_sound_B.mp3
+    - assets/alarm_sound_C.mp3
+    - images/sample.jpg
